@@ -34,24 +34,18 @@ public class Monday {
             } else if (input.equals("list")) {
                 displayList(inputs);
             } else if (input.startsWith("mark ")) {
-                try {
-                    int taskNum = Integer.parseInt(input.substring(5));
-                    markTask(inputs, taskNum - 1);
-                    System.out.println("Nice! I've marked this task as done:\n  " + inputs.get(taskNum - 1));
-                } catch (Exception e) {
-                    System.out.println("Invalid task number.");
-                }
+                handleMarkUnmark(inputs, input, true);
             } else if (input.startsWith("unmark ")) {
-                try {
-                    int taskNum = Integer.parseInt(input.substring(7));
-                    unmarkTask(inputs, taskNum - 1);
-                    System.out.println("OK, I've marked this task as not done yet:\n  " + inputs.get(taskNum - 1));
-                } catch (Exception e) {
-                    System.out.println("Invalid task number.");
-                }
-            }
-            else {
-                addTask(inputs, input);
+                handleMarkUnmark(inputs, input, false);
+            } else if (input.startsWith("todo ")) {
+                addTodo(inputs, input);
+            } else if (input.startsWith("deadline ")) {
+                addDeadline(inputs, input);
+            } else if (input.startsWith("event ")) {
+                addEvent(inputs, input);
+            } else {
+                inputs.add(new Task(input));
+                System.out.println("added: " + input);
             }
         }
 
@@ -65,17 +59,59 @@ public class Monday {
         }
     }
 
-    private static void markTask(ArrayList<Task> inputs, int index) {
-        inputs.get(index).markAsDone();
-    }
-
-    private static void unmarkTask(ArrayList<Task> inputs, int index) {
-        inputs.get(index).markAsNotDone();
+    private static void handleMarkUnmark(ArrayList<Task> inputs, String input, boolean mark) {
+        try {
+            int taskNum = Integer.parseInt(input.substring(mark ? 5 : 7));
+            Task task = inputs.get(taskNum - 1);
+            if (mark) task.markAsDone(); else task.markAsNotDone();
+            System.out.println((mark ? "Nice! I've marked this task as done:" : "OK, I've marked this task as not done yet:") + "\n  " + task);
+        } catch (Exception e) {
+            System.out.println("Invalid task number.");
+        }
     }
 
     private static void addTask(ArrayList<Task> inputs, String input) {
         System.out.println("added: " + input);
         inputs.add(new Task(input));
     }
+
+    private static void addDeadline(ArrayList<Task> inputs, String input) {
+        try {
+            String[] parts = input.split(" /by ");
+            String desc = parts[0].substring(9);
+            String dueDate = parts[1];
+            inputs.add(new Deadline(desc, dueDate));
+            System.out.println("Got it. I've added this task:");
+            System.out.println("  " + inputs.get(inputs.size() - 1));
+            System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+        } catch (Exception e) {
+            System.out.println("Format: deadline <description> /by <date>");
+        }
+    }
+
+    private static void addTodo(ArrayList<Task> inputs, String input) {
+        String description = input.substring(5);
+        inputs.add(new Todo(description));
+        System.out.println("Got it. I've added this task:");
+        System.out.println("  [T][ ] " + description);
+        System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+    }
+
+    private static void addEvent(ArrayList<Task> inputs, String input) {
+        try {
+            String[] parts = input.split(" /from ");
+            String desc = parts[0].substring(6);
+            String[] times = parts[1].split(" /to ");
+            String startTime = times[0];
+            String endTime = times[1];
+            inputs.add(new Event(desc, startTime, endTime));
+            System.out.println("Got it. I've added this task:");
+            System.out.println("  " + inputs.get(inputs.size() - 1));
+            System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+        } catch (Exception e) {
+            System.out.println("Format: event <description> /from <start> /to <end>");
+        }
+    }
+
 }
 

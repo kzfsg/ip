@@ -1,6 +1,8 @@
 public class Task {
-    private String description;
-    private boolean isDone;
+    // Changed to protected to allow subclass access while maintaining encapsulation
+    // This enables subclasses to access core data without breaking the abstraction
+    protected String description;
+    protected boolean isDone;
 
     public Task(String description) {
         this.description = description;
@@ -27,6 +29,8 @@ public class Task {
         return isDone ? "[X]" : "[ ]";
     }
 
+    // Virtual method that subclasses can override for specialized display
+    // Base implementation works for simple todos
     @Override
     public String toString() {
         return getStatusIcon() + " " + description;
