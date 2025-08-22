@@ -1,3 +1,5 @@
+import java.util.Scanner;
+
 public class Monday {
     public static void main(String[] args) {
         String logo = " __  __                 _             \n"
@@ -8,8 +10,20 @@ public class Monday {
                 + "|_|  |_|\\___/|_| |_|\\__,_|\\__,_|\\__, | \n"
                 + "                                __/ | \n"
                 + "                               |___/  \n";
+
+        Scanner scanner = new Scanner(System.in);
         System.out.println("Hello I'm\n" + logo);
         System.out.println("What can I do for you?\n");
-        System.out.println("Bye. Hope to see you again soon!\n");
+
+        String input;
+        while (true) {
+            input = scanner.nextLine();
+            if (input.equals("bye")) {
+                System.out.println("Bye. Hope to see you again soon!\n");
+                break;
+            } else {
+                System.out.println(" " + input);
+            }
+        }
     }
 }
