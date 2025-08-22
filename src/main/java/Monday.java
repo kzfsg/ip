@@ -48,6 +48,8 @@ public class Monday {
                     addDeadline(inputs, input);
                 } else if (input.startsWith("event")) {
                     addEvent(inputs, input);
+                } else if (input.startsWith("delete")) {
+                    deleteTask(inputs, input);
                 } else {
                     throw new UnknownCommandException();
                 }
@@ -60,6 +62,25 @@ public class Monday {
 
         scanner.close();
     }
+
+    private static void deleteTask(ArrayList<Task> inputs, String input) throws InvalidTaskNumberException, InvalidCommandFormatException
+        {
+            try {
+                int taskNum = Integer.parseInt(input.substring(7));
+                if (input.equals("delete")) {
+                    throw new InvalidCommandFormatException("delete <task number>");
+                }
+                if (taskNum < 1 || taskNum > inputs.size()) {
+                    throw new InvalidTaskNumberException();
+                }
+
+                Task deletedTask = inputs.remove(taskNum - 1);
+                System.out.println("Noted. I've removed this task:\n" + deletedTask + "\n Now you have " + inputs.size() + " tasks in the list.");
+
+            } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                throw new InvalidTaskNumberException();
+            }
+            }
 
     private static void displayList(ArrayList<Task> inputs) {
         System.out.println("Here are the tasks in your list:");
