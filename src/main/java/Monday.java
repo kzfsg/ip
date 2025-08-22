@@ -2,9 +2,13 @@ import java.util.Scanner;
 import java.util.ArrayList;
 
 public class Monday {
-    public static void main(String[] args) {
-        showWelcome();
-        runChatbot();
+    public static void main(String[] args){
+        try {
+            showWelcome();
+            runChatbot();
+        } catch (UnknownCommandException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     private static void showWelcome() {
@@ -21,32 +25,37 @@ public class Monday {
         System.out.println("What can I do for you?\n");
     }
 
-    private static void runChatbot() {
+    private static void runChatbot() throws UnknownCommandException {
         Scanner scanner = new Scanner(System.in);
         String input;
         ArrayList<Task> inputs = new ArrayList<>();
 
         while (true) {
-            input = scanner.nextLine();
-            if (input.equals("bye")) {
-                System.out.println("Bye. Hope to see you again soon!\n");
-                break;
-            } else if (input.equals("list")) {
-                displayList(inputs);
-            } else if (input.startsWith("mark ")) {
-                handleMarkUnmark(inputs, input, true);
-            } else if (input.startsWith("unmark ")) {
-                handleMarkUnmark(inputs, input, false);
-            } else if (input.startsWith("todo ")) {
-                addTodo(inputs, input);
-            } else if (input.startsWith("deadline ")) {
-                addDeadline(inputs, input);
-            } else if (input.startsWith("event ")) {
-                addEvent(inputs, input);
-            } else {
-                inputs.add(new Task(input));
-                System.out.println("added: " + input);
-            }
+            try {
+                input = scanner.nextLine();
+                if (input.equals("bye")) {
+                    System.out.println("Bye. Hope to see you again soon!\n");
+                    break;
+                } else if (input.equals("list")) {
+                    displayList(inputs);
+                } else if (input.startsWith("mark ")) {
+                    handleMarkUnmark(inputs, input, true);
+                } else if (input.startsWith("unmark ")) {
+                    handleMarkUnmark(inputs, input, false);
+                } else if (input.startsWith("todo")) {
+                    addTodo(inputs, input);
+                } else if (input.startsWith("deadline")) {
+                    addDeadline(inputs, input);
+                } else if (input.startsWith("event")) {
+                    addEvent(inputs, input);
+                } else {
+                    throw new UnknownCommandException();
+                }
+            } catch(EmptyDescriptionException | InvalidCommandFormatException |
+                        UnknownCommandException | InvalidTaskNumberException e) {
+                    System.out.println(e.getMessage());
+                }
+
         }
 
         scanner.close();
@@ -59,59 +68,95 @@ public class Monday {
         }
     }
 
-    private static void handleMarkUnmark(ArrayList<Task> inputs, String input, boolean mark) {
+    private static void handleMarkUnmark(ArrayList<Task> inputs, String input, boolean mark)
+            throws InvalidTaskNumberException {
         try {
             int taskNum = Integer.parseInt(input.substring(mark ? 5 : 7));
+            if (taskNum < 1 || taskNum > inputs.size()) {
+                throw new InvalidTaskNumberException();
+            }
+
             Task task = inputs.get(taskNum - 1);
             if (mark) task.markAsDone(); else task.markAsNotDone();
-            System.out.println((mark ? "Nice! I've marked this task as done:" : "OK, I've marked this task as not done yet:") + "\n  " + task);
-        } catch (Exception e) {
-            System.out.println("Invalid task number.");
+            System.out.println((mark ? "Nice! I've marked this task as done:" :
+                    "OK, I've marked this task as not done yet:") + "\n  " + task);
+        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+            throw new InvalidTaskNumberException();
         }
     }
 
-    private static void addTask(ArrayList<Task> inputs, String input) {
-        System.out.println("added: " + input);
-        inputs.add(new Task(input));
-    }
 
-    private static void addDeadline(ArrayList<Task> inputs, String input) {
-        try {
-            String[] parts = input.split(" /by ");
-            String desc = parts[0].substring(9);
-            String dueDate = parts[1];
-            inputs.add(new Deadline(desc, dueDate));
-            System.out.println("Got it. I've added this task:");
-            System.out.println("  " + inputs.get(inputs.size() - 1));
-            System.out.println("Now you have " + inputs.size() + " tasks in the list.");
-        } catch (Exception e) {
-            System.out.println("Format: deadline <description> /by <date>");
+    private static void addDeadline(ArrayList<Task> inputs, String input)
+            throws EmptyDescriptionException, InvalidCommandFormatException {
+        String[] parts = input.split(" /by ");
+        if (parts.length != 2) {
+            throw new InvalidCommandFormatException("deadline <description> /by <date>");
         }
+
+        String desc = extractAndValidateDescription(parts[0], 9, "deadline");
+        String dueDate = parts[1].trim();
+
+        if (dueDate.isEmpty()) {
+            throw new EmptyDescriptionException("deadline due date");
+        }
+
+        inputs.add(new Deadline(desc, dueDate));
+        System.out.println("Got it. I've added this task:");
+        System.out.println("  " + inputs.get(inputs.size() - 1));
+        System.out.println("Now you have " + inputs.size() + " tasks in the list.");
     }
 
-    private static void addTodo(ArrayList<Task> inputs, String input) {
-        String description = input.substring(5);
+    private static void addTodo(ArrayList<Task> inputs, String input)
+            throws EmptyDescriptionException {
+        if (input.equals("todo")) {
+            throw new EmptyDescriptionException("todo");
+        }
+        String description = extractAndValidateDescription(input, 5, "todo");
+
         inputs.add(new Todo(description));
         System.out.println("Got it. I've added this task:");
         System.out.println("  [T][ ] " + description);
         System.out.println("Now you have " + inputs.size() + " tasks in the list.");
     }
 
-    private static void addEvent(ArrayList<Task> inputs, String input) {
-        try {
-            String[] parts = input.split(" /from ");
-            String desc = parts[0].substring(6);
-            String[] times = parts[1].split(" /to ");
-            String startTime = times[0];
-            String endTime = times[1];
-            inputs.add(new Event(desc, startTime, endTime));
-            System.out.println("Got it. I've added this task:");
-            System.out.println("  " + inputs.get(inputs.size() - 1));
-            System.out.println("Now you have " + inputs.size() + " tasks in the list.");
-        } catch (Exception e) {
-            System.out.println("Format: event <description> /from <start> /to <end>");
+    private static void addEvent(ArrayList<Task> inputs, String input)
+            throws EmptyDescriptionException, InvalidCommandFormatException {
+        String[] parts = input.split(" /from ");
+        if (parts.length != 2) {
+            throw new InvalidCommandFormatException("event <description> /from <start> /to <end>");
         }
+
+        String desc = extractAndValidateDescription(parts[0], 6, "event");
+        String[] times = parts[1].split(" /to ");
+
+        if (times.length != 2) {
+            throw new InvalidCommandFormatException("event <description> /from <start> /to <end>");
+        }
+
+        String startTime = times[0].trim();
+        String endTime = times[1].trim();
+
+        if (startTime.isEmpty() || endTime.isEmpty()) {
+            throw new EmptyDescriptionException("event time");
+        }
+
+        inputs.add(new Event(desc, startTime, endTime));
+        System.out.println("Got it. I've added this task:");
+        System.out.println("  " + inputs.get(inputs.size() - 1));
+        System.out.println("Now you have " + inputs.size() + " tasks in the list.");
     }
 
+    // Helper method following DRY principle
+    private static String extractAndValidateDescription(String input, int startIndex, String taskType)
+            throws EmptyDescriptionException {
+        String description = input.substring(startIndex).trim();
+        if (description.isEmpty()) {
+            throw new EmptyDescriptionException(taskType);
+        }
+        return description;
+    }
 }
+
+
+
 
