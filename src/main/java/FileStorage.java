@@ -7,7 +7,6 @@ import java.util.Scanner;
 
 /**
  * Handles file storage operations for task persistence.
- * Follows Single Responsibility Principle - only handles file I/O operations.
  */
 public class FileStorage {
     private static final String FILE_PATH = "./data/monday.txt";

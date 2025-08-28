@@ -28,7 +28,13 @@ public class Monday {
     private static void runChatbot() throws UnknownCommandException {
         Scanner scanner = new Scanner(System.in);
         String input;
-        ArrayList<Task> inputs = new ArrayList<>();
+
+        // Load existing tasks from file at startup
+        ArrayList<Task> inputs = FileStorage.loadTasks();
+
+        if (inputs.size() > 0) {
+            System.out.println("Loaded " + inputs.size() + " task(s) from previous session.\n");
+        }
 
         while (true) {
             try {
@@ -54,9 +60,9 @@ public class Monday {
                     throw new UnknownCommandException();
                 }
             } catch(EmptyDescriptionException | InvalidCommandFormatException |
-                        UnknownCommandException | InvalidTaskNumberException e) {
-                    System.out.println(e.getMessage());
-                }
+                    UnknownCommandException | InvalidTaskNumberException e) {
+                System.out.println(e.getMessage());
+            }
 
         }
 
@@ -64,28 +70,39 @@ public class Monday {
     }
 
     private static void deleteTask(ArrayList<Task> inputs, String input) throws InvalidTaskNumberException, InvalidCommandFormatException
-        {
-            try {
-                int taskNum = Integer.parseInt(input.substring(7));
-                if (input.equals("delete")) {
-                    throw new InvalidCommandFormatException("delete <task number>");
-                }
-                if (taskNum < 1 || taskNum > inputs.size()) {
-                    throw new InvalidTaskNumberException();
-                }
+    {
+        try {
+            if (input.equals("delete")) {
+                throw new InvalidCommandFormatException("delete <task number>");
+            }
 
-                Task deletedTask = inputs.remove(taskNum - 1);
-                System.out.println("Noted. I've removed this task:\n" + deletedTask + "\n Now you have " + inputs.size() + " tasks in the list.");
-
-            } catch (NumberFormatException | IndexOutOfBoundsException e) {
+            int taskNum = Integer.parseInt(input.substring(7).trim());
+            if (taskNum < 1 || taskNum > inputs.size()) {
                 throw new InvalidTaskNumberException();
             }
-            }
+
+            Task deletedTask = inputs.remove(taskNum - 1);
+
+            // Save to file after deletion
+            FileStorage.saveTasks(inputs);
+
+            System.out.println("Noted. I've removed this task:");
+            System.out.println("  " + deletedTask);
+            System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+
+        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+            throw new InvalidTaskNumberException();
+        }
+    }
 
     private static void displayList(ArrayList<Task> inputs) {
-        System.out.println("Here are the tasks in your list:");
-        for (int i = 0; i < inputs.size(); i++) {
-            System.out.println((i + 1) + "." + inputs.get(i));
+        if (inputs.isEmpty()) {
+            System.out.println("Your task list is empty.");
+        } else {
+            System.out.println("Here are the tasks in your list:");
+            for (int i = 0; i < inputs.size(); i++) {
+                System.out.println((i + 1) + "." + inputs.get(i));
+            }
         }
     }
 
@@ -99,6 +116,10 @@ public class Monday {
 
             Task task = inputs.get(taskNum - 1);
             if (mark) task.markAsDone(); else task.markAsNotDone();
+
+            // Save to file after marking/unmarking
+            FileStorage.saveTasks(inputs);
+
             System.out.println((mark ? "Nice! I've marked this task as done:" :
                     "OK, I've marked this task as not done yet:") + "\n  " + task);
         } catch (NumberFormatException | IndexOutOfBoundsException e) {
@@ -106,9 +127,12 @@ public class Monday {
         }
     }
 
-
     private static void addDeadline(ArrayList<Task> inputs, String input)
             throws EmptyDescriptionException, InvalidCommandFormatException {
+        if (input.equals("deadline")) {
+            throw new EmptyDescriptionException("deadline");
+        }
+
         String[] parts = input.split(" /by ");
         if (parts.length != 2) {
             throw new InvalidCommandFormatException("deadline <description> /by <date>");
@@ -122,6 +146,10 @@ public class Monday {
         }
 
         inputs.add(new Deadline(desc, dueDate));
+
+        // Save to file after adding
+        FileStorage.saveTasks(inputs);
+
         System.out.println("Got it. I've added this task:");
         System.out.println("  " + inputs.get(inputs.size() - 1));
         System.out.println("Now you have " + inputs.size() + " tasks in the list.");
@@ -135,6 +163,10 @@ public class Monday {
         String description = extractAndValidateDescription(input, 5, "todo");
 
         inputs.add(new Todo(description));
+
+        // Save to file after adding
+        FileStorage.saveTasks(inputs);
+
         System.out.println("Got it. I've added this task:");
         System.out.println("  [T][ ] " + description);
         System.out.println("Now you have " + inputs.size() + " tasks in the list.");
@@ -142,6 +174,10 @@ public class Monday {
 
     private static void addEvent(ArrayList<Task> inputs, String input)
             throws EmptyDescriptionException, InvalidCommandFormatException {
+        if (input.equals("event")) {
+            throw new EmptyDescriptionException("event");
+        }
+
         String[] parts = input.split(" /from ");
         if (parts.length != 2) {
             throw new InvalidCommandFormatException("event <description> /from <start> /to <end>");
@@ -162,12 +198,15 @@ public class Monday {
         }
 
         inputs.add(new Event(desc, startTime, endTime));
+
+        // Save to file after adding
+        FileStorage.saveTasks(inputs);
+
         System.out.println("Got it. I've added this task:");
         System.out.println("  " + inputs.get(inputs.size() - 1));
         System.out.println("Now you have " + inputs.size() + " tasks in the list.");
     }
 
-    // Helper method following DRY principle
     private static String extractAndValidateDescription(String input, int startIndex, String taskType)
             throws EmptyDescriptionException {
         String description = input.substring(startIndex).trim();
@@ -177,7 +216,3 @@ public class Monday {
         return description;
     }
 }
-
-
-
-
