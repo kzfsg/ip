@@ -1,23 +1,76 @@
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+
 class Event extends Task {
-    private String startTime;
-    private String endTime;
+    private LocalDateTime startDateTime;
+    private LocalDateTime endDateTime;
 
-    public Event(String description, String startTime, String endTime) {
+    // Constructor that accepts strings and parses them to LocalDateTime
+    public Event(String description, String startTimeStr, String endTimeStr) throws DateTimeParseException {
         super(description);
-        this.startTime = startTime;
-        this.endTime = endTime;
+        this.startDateTime = parseDateTimeFromString(startTimeStr);
+        this.endDateTime = parseDateTimeFromString(endTimeStr);
+
+        // Validate that start time is before end time
+        if (startDateTime.isAfter(endDateTime)) {
+            throw new IllegalArgumentException("Start time cannot be after end time");
+        }
     }
 
-    public String getStartTime() {
-        return startTime;
+    // Constructor that accepts LocalDateTime directly (for loading from file)
+    public Event(String description, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        super(description);
+        if (startDateTime.isAfter(endDateTime)) {
+            throw new IllegalArgumentException("Start time cannot be after end time");
+        }
+        this.startDateTime = startDateTime;
+        this.endDateTime = endDateTime;
     }
 
-    public String getEndTime() {
-        return endTime;
+    public LocalDateTime getStartDateTime() {
+        return startDateTime;
+    }
+
+    public LocalDateTime getEndDateTime() {
+        return endDateTime;
+    }
+
+    /**
+     * Parse various date/time formats into LocalDateTime
+     * Supports: yyyy-MM-dd HHmm, d/M/yyyy HHmm
+     */
+    private LocalDateTime parseDateTimeFromString(String dateTimeStr) throws DateTimeParseException {
+        dateTimeStr = dateTimeStr.trim();
+
+        // Try format: yyyy-MM-dd HHmm (e.g., 2019-12-02 1800)
+        try {
+            return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"));
+        } catch (DateTimeParseException e1) {
+            // Try format: d/M/yyyy HHmm (e.g., 2/12/2019 1800)
+            try {
+                return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("d/M/yyyy HHmm"));
+            } catch (DateTimeParseException e2) {
+                throw new DateTimeParseException("Unable to parse date/time: " + dateTimeStr +
+                        ". Supported formats: yyyy-MM-dd HHmm, d/M/yyyy HHmm", dateTimeStr, 0);
+            }
+        }
     }
 
     @Override
     public String toString() {
-        return "[E]" + getStatusIcon() + " " + description + " (at: " + startTime + " to " + endTime + ")";
+        DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("MMM dd yyyy h:mma");
+
+        String startStr = startDateTime.format(displayFormatter);
+        String endStr;
+
+        // Smart formatting: if same day, only show end time; if different day, show full date
+        if (startDateTime.toLocalDate().equals(endDateTime.toLocalDate())) {
+            endStr = endDateTime.format(DateTimeFormatter.ofPattern("h:mma"));
+        } else {
+            endStr = endDateTime.format(displayFormatter);
+        }
+
+        return "[E]" + getStatusIcon() + " " + description + " (at: " + startStr + " to " + endStr + ")";
     }
 }

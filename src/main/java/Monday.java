@@ -60,7 +60,7 @@ public class Monday {
                     throw new UnknownCommandException();
                 }
             } catch(EmptyDescriptionException | InvalidCommandFormatException |
-                    UnknownCommandException | InvalidTaskNumberException e) {
+                    UnknownCommandException | InvalidTaskNumberException | InvalidDateTimeException e) {
                 System.out.println(e.getMessage());
             }
 
@@ -128,31 +128,35 @@ public class Monday {
     }
 
     private static void addDeadline(ArrayList<Task> inputs, String input)
-            throws EmptyDescriptionException, InvalidCommandFormatException {
+            throws EmptyDescriptionException, InvalidCommandFormatException, InvalidDateTimeException {
         if (input.equals("deadline")) {
             throw new EmptyDescriptionException("deadline");
         }
 
         String[] parts = input.split(" /by ");
         if (parts.length != 2) {
-            throw new InvalidCommandFormatException("deadline <description> /by <date>");
+            throw new InvalidCommandFormatException("deadline <description> /by <date time>");
         }
 
         String desc = extractAndValidateDescription(parts[0], 9, "deadline");
-        String dueDate = parts[1].trim();
+        String dueDateTime = parts[1].trim();
 
-        if (dueDate.isEmpty()) {
+        if (dueDateTime.isEmpty()) {
             throw new EmptyDescriptionException("deadline due date");
         }
 
-        inputs.add(new Deadline(desc, dueDate));
+        try {
+            inputs.add(new Deadline(desc, dueDateTime));
 
-        // Save to file after adding
-        FileStorage.saveTasks(inputs);
+            // Save to file after adding
+            FileStorage.saveTasks(inputs);
 
-        System.out.println("Got it. I've added this task:");
-        System.out.println("  " + inputs.get(inputs.size() - 1));
-        System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+            System.out.println("Got it. I've added this task:");
+            System.out.println("  " + inputs.get(inputs.size() - 1));
+            System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new InvalidDateTimeException(e.getMessage());
+        }
     }
 
     private static void addTodo(ArrayList<Task> inputs, String input)
@@ -173,7 +177,7 @@ public class Monday {
     }
 
     private static void addEvent(ArrayList<Task> inputs, String input)
-            throws EmptyDescriptionException, InvalidCommandFormatException {
+            throws EmptyDescriptionException, InvalidCommandFormatException, InvalidDateTimeException {
         if (input.equals("event")) {
             throw new EmptyDescriptionException("event");
         }
@@ -197,16 +201,21 @@ public class Monday {
             throw new EmptyDescriptionException("event time");
         }
 
-        inputs.add(new Event(desc, startTime, endTime));
+        try {
+            inputs.add(new Event(desc, startTime, endTime));
 
-        // Save to file after adding
-        FileStorage.saveTasks(inputs);
+            // Save to file after adding
+            FileStorage.saveTasks(inputs);
 
-        System.out.println("Got it. I've added this task:");
-        System.out.println("  " + inputs.get(inputs.size() - 1));
-        System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+            System.out.println("Got it. I've added this task:");
+            System.out.println("  " + inputs.get(inputs.size() - 1));
+            System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+        } catch (java.time.format.DateTimeParseException | IllegalArgumentException e) {
+            throw new InvalidDateTimeException(e.getMessage());
+        }
     }
 
+    // Helper method following DRY principle
     private static String extractAndValidateDescription(String input, int startIndex, String taskType)
             throws EmptyDescriptionException {
         String description = input.substring(startIndex).trim();
