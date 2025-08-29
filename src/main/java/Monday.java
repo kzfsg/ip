@@ -30,7 +30,7 @@ public class Monday {
         String input;
 
         // Load existing tasks from file at startup
-        ArrayList<Task> inputs = FileStorage.loadTasks();
+        ArrayList<Task> inputs = Storage.loadTasks();
 
         if (inputs.size() > 0) {
             System.out.println("Loaded " + inputs.size() + " task(s) from previous session.\n");
@@ -84,7 +84,7 @@ public class Monday {
             Task deletedTask = inputs.remove(taskNum - 1);
 
             // Save to file after deletion
-            FileStorage.saveTasks(inputs);
+            Storage.saveTasks(inputs);
 
             System.out.println("Noted. I've removed this task:");
             System.out.println("  " + deletedTask);
@@ -118,7 +118,7 @@ public class Monday {
             if (mark) task.markAsDone(); else task.markAsNotDone();
 
             // Save to file after marking/unmarking
-            FileStorage.saveTasks(inputs);
+            Storage.saveTasks(inputs);
 
             System.out.println((mark ? "Nice! I've marked this task as done:" :
                     "OK, I've marked this task as not done yet:") + "\n  " + task);
@@ -149,7 +149,7 @@ public class Monday {
             inputs.add(new Deadline(desc, dueDateTime));
 
             // Save to file after adding
-            FileStorage.saveTasks(inputs);
+            Storage.saveTasks(inputs);
 
             System.out.println("Got it. I've added this task:");
             System.out.println("  " + inputs.get(inputs.size() - 1));
@@ -169,7 +169,7 @@ public class Monday {
         inputs.add(new Todo(description));
 
         // Save to file after adding
-        FileStorage.saveTasks(inputs);
+        Storage.saveTasks(inputs);
 
         System.out.println("Got it. I've added this task:");
         System.out.println("  [T][ ] " + description);
@@ -205,7 +205,7 @@ public class Monday {
             inputs.add(new Event(desc, startTime, endTime));
 
             // Save to file after adding
-            FileStorage.saveTasks(inputs);
+            Storage.saveTasks(inputs);
 
             System.out.println("Got it. I've added this task:");
             System.out.println("  " + inputs.get(inputs.size() - 1));

@@ -11,7 +11,7 @@ import java.util.Scanner;
  * Handles file storage operations for task persistence.
  * Follows Single Responsibility Principle - only handles file I/O operations.
  */
-public class FileStorage {
+public class Storage {
     private static final String FILE_PATH = "./data/monday.txt";
     private static final String SEPARATOR = " | ";
 
