@@ -1,3 +1,16 @@
+package monday;
+
+import monday.exception.EmptyDescriptionException;
+import monday.exception.InvalidCommandFormatException;
+import monday.exception.InvalidDateTimeException;
+import monday.exception.InvalidTaskNumberException;
+import monday.exception.TaskLoadingException;
+import monday.exception.UnknownCommandException;
+import monday.parser.Parser;
+import monday.storage.Storage;
+import monday.task.TaskList;
+import monday.ui.Ui;
+
 /**
  * Main application class that orchestrates the Monday task manager.
  * Serves as a thin layer that coordinates between Storage, TaskList, Ui, and Parser.
