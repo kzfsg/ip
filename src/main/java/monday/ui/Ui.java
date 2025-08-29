@@ -1,6 +1,8 @@
 package monday.ui;
 
 import java.util.Scanner;
+import java.util.ArrayList;
+
 import monday.task.Task;
 import monday.task.TaskList;
 
@@ -36,50 +38,49 @@ public class Ui {
     }
 
     /**
-     * Displays the goodbye message when the user exits the application.
-     */
-    public void showGoodbye() {
-        System.out.println("Bye. Hope to see you again soon!\n");
-    }
-
-    /**
-     * Reads the next line of user input from the scanner.
+     * Reads a command from the user.
      *
-     * @return The user's input as a String
+     * @return The user's command as a string
      */
     public String readCommand() {
+        System.out.print("> ");
         return scanner.nextLine();
     }
 
     /**
-     * Displays the list of tasks to the user.
-     * Shows a message if the list is empty, otherwise displays all tasks with numbering.
+     * Displays a goodbye message when the application exits.
+     */
+    public void showGoodbye() {
+        System.out.println("Bye. Hope to see you again soon!");
+    }
+
+    /**
+     * Displays the full task list to the user.
      *
-     * @param taskList The TaskList to display
+     * @param taskList The TaskList object to display
      */
     public void showTaskList(TaskList taskList) {
         System.out.println(taskList.toString());
     }
 
     /**
-     * Displays a message indicating how many tasks were loaded from previous session.
+     * Displays a message confirming that tasks have been loaded from storage.
      *
-     * @param taskCount The number of tasks that were loaded
+     * @param numberOfTasks The number of tasks loaded
      */
-    public void showLoadedTasksMessage(int taskCount) {
-        if (taskCount > 0) {
-            System.out.println("Loaded " + taskCount + " task(s) from previous session.\n");
-        }
+    public void showLoadedTasksMessage(int numberOfTasks) {
+        System.out.println("Successfully loaded " + numberOfTasks + " tasks from storage.");
     }
 
     /**
-     * Displays a confirmation message when a task is marked as done or undone.
+     * Displays a confirmation message when a task's status is changed.
      *
-     * @param task The task that was marked/unmarked
-     * @param isMarked True if task was marked as done, false if unmarked
+     * @param task The task that was marked or unmarked
+     * @param isMarked True if the task was marked, false if it was unmarked
      */
-    public void showMarkTaskMessage(Task task, boolean isMarked) {
-        System.out.println((isMarked ? "Nice! I've marked this task as done:" :
+    public void showMarkUnmarkMessage(Task task, boolean isMarked) {
+        System.out.println((isMarked ?
+                "Nice! I've marked this task as done:" :
                 "OK, I've marked this task as not done yet:") + "\n  " + task);
     }
 
@@ -117,8 +118,7 @@ public class Ui {
     }
 
     /**
-     * Closes the scanner to free up system resources.
-     * Should be called when the application is shutting down.
+     * Closes the scanner to release system resources.
      */
     public void close() {
         scanner.close();
