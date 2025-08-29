@@ -11,18 +11,29 @@ import java.util.Scanner;
  * Handles file storage operations for task persistence.
  * Follows Single Responsibility Principle - only handles file I/O operations.
  */
-public class FileStorage {
-    private static final String FILE_PATH = "./data/monday.txt";
+public class Storage {
+    private final String filePath;
     private static final String SEPARATOR = " | ";
+
+    /**
+     * Constructs a Storage instance with the specified file path.
+     *
+     * @param filePath The path to the file where tasks will be stored
+     */
+    public Storage(String filePath) {
+        this.filePath = filePath;
+    }
 
     /**
      * Saves all tasks to file in the specified format.
      * Format: TaskType | Status | Description | [Additional fields]
+     *
+     * @param tasks The list of tasks to save
      */
-    public static void saveTasks(ArrayList<Task> tasks) {
+    public void save(ArrayList<Task> tasks) {
         try {
             createDataDirectoryIfNotExists();
-            FileWriter fw = new FileWriter(FILE_PATH);
+            FileWriter fw = new FileWriter(filePath);
 
             for (Task task : tasks) {
                 fw.write(formatTaskForFile(task) + System.lineSeparator());
@@ -30,17 +41,22 @@ public class FileStorage {
 
             fw.close();
         } catch (IOException e) {
-            System.out.println("Error saving tasks: " + e.getMessage());
+            // For save operations, we print error but don't throw exception
+            // to avoid disrupting the user experience during normal operations
+            System.out.println("Warning: Could not save tasks to file: " + e.getMessage());
         }
     }
 
     /**
      * Loads tasks from file and returns them as an ArrayList.
      * Handles missing file gracefully by returning empty list.
+     *
+     * @return ArrayList of tasks loaded from file
+     * @throws TaskLoadingException If there's an error reading or parsing the file
      */
-    public static ArrayList<Task> loadTasks() {
+    public ArrayList<Task> load() throws TaskLoadingException {
         ArrayList<Task> tasks = new ArrayList<>();
-        File file = new File(FILE_PATH);
+        File file = new File(filePath);
 
         if (!file.exists()) {
             return tasks; // Return empty list if file doesn't exist
@@ -59,9 +75,9 @@ public class FileStorage {
             }
             scanner.close();
         } catch (FileNotFoundException e) {
-            System.out.println("Data file not found. Starting with empty task list.");
+            throw new TaskLoadingException("Data file not found", e);
         } catch (Exception e) {
-            System.out.println("Error loading tasks: " + e.getMessage());
+            throw new TaskLoadingException("Failed to read or parse data file", e);
         }
 
         return tasks;
@@ -71,8 +87,8 @@ public class FileStorage {
      * Creates the data directory if it doesn't exist.
      * Handles the case where parent directories need to be created.
      */
-    private static void createDataDirectoryIfNotExists() {
-        File file = new File(FILE_PATH);
+    private void createDataDirectoryIfNotExists() {
+        File file = new File(filePath);
         File parentDir = file.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
             parentDir.mkdirs();
@@ -82,8 +98,11 @@ public class FileStorage {
     /**
      * Formats a task object into the file format string.
      * Uses polymorphism to handle different task types appropriately.
+     *
+     * @param task The task to format
+     * @return The formatted string representation
      */
-    private static String formatTaskForFile(Task task) {
+    private String formatTaskForFile(Task task) {
         String status = task.isDone() ? "1" : "0";
 
         if (task instanceof Todo) {
@@ -106,8 +125,11 @@ public class FileStorage {
     /**
      * Parses a line from the file back into a Task object.
      * Implements error handling for corrupted data.
+     *
+     * @param line The line to parse
+     * @return The parsed Task object, or null if parsing fails
      */
-    private static Task parseTaskFromLine(String line) {
+    private Task parseTaskFromLine(String line) {
         try {
             String[] parts = line.split("\\" + SEPARATOR.trim() + "\\s*");
             if (parts.length < 3) {
@@ -133,6 +155,7 @@ public class FileStorage {
                             LocalDateTime dueDateTime = LocalDateTime.parse(dueDateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"));
                             task = new Deadline(description, dueDateTime);
                         } catch (Exception e) {
+                            // Log but don't throw - just skip corrupted entries
                             System.out.println("Skipping corrupted deadline date: " + line);
                             return null;
                         }
@@ -151,6 +174,7 @@ public class FileStorage {
                             LocalDateTime endDateTime = LocalDateTime.parse(endTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"));
                             task = new Event(description, startDateTime, endDateTime);
                         } catch (Exception e) {
+                            // Log but don't throw - just skip corrupted entries
                             System.out.println("Skipping corrupted event dates: " + line);
                             return null;
                         }
