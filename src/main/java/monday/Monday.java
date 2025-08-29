@@ -7,6 +7,7 @@ import monday.exception.InvalidTaskNumberException;
 import monday.exception.TaskLoadingException;
 import monday.exception.UnknownCommandException;
 import monday.parser.Parser;
+import monday.parser.Parser.CommandType;
 import monday.storage.Storage;
 import monday.task.TaskList;
 import monday.ui.Ui;
@@ -29,7 +30,7 @@ public class Monday {
     public Monday(String filePath) {
         ui = new Ui();
         storage = new Storage(filePath);
-        
+
         try {
             tasks = new TaskList(storage.load(), storage);
             ui.showLoadedTasksMessage(tasks.size());
@@ -45,25 +46,25 @@ public class Monday {
      */
     public void run() {
         ui.showWelcome();
-        
+
         while (true) {
             try {
                 String input = ui.readCommand();
-                
-                if (input.equals("bye")) {
+                Parser.Command command = Parser.parse(input);
+
+                if (command.getType() == CommandType.BYE) {
                     ui.showGoodbye();
                     break;
                 }
-                
-                Parser.Command command = Parser.parse(input);
+
                 Parser.execute(command, tasks, ui);
-                
+
             } catch (EmptyDescriptionException | InvalidCommandFormatException |
                      UnknownCommandException | InvalidTaskNumberException | InvalidDateTimeException e) {
                 ui.showError(e.getMessage());
             }
         }
-        
+
         ui.close();
     }
 

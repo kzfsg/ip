@@ -1,5 +1,7 @@
 package monday.parser;
 
+import java.util.ArrayList;
+
 import monday.exception.EmptyDescriptionException;
 import monday.exception.InvalidCommandFormatException;
 import monday.exception.InvalidDateTimeException;
@@ -22,7 +24,7 @@ public class Parser {
      * Represents the different types of commands that can be parsed.
      */
     public enum CommandType {
-        BYE, LIST, MARK, UNMARK, TODO, DEADLINE, EVENT, DELETE, UNKNOWN
+        BYE, LIST, MARK, UNMARK, TODO, DEADLINE, EVENT, DELETE, FIND, UNKNOWN
     }
 
     /**
@@ -47,72 +49,72 @@ public class Parser {
         }
 
         /**
-         * Gets the command type.
+         * Returns the command type.
          *
-         * @return The CommandType enum value
+         * @return The command type
          */
         public CommandType getType() {
             return type;
         }
 
         /**
-         * Gets the full original command string.
+         * Returns the full original command string.
          *
-         * @return The original command string
+         * @return The full command string
          */
         public String getFullCommand() {
             return fullCommand;
         }
 
         /**
-         * Gets the description extracted from the command.
+         * Returns the task description from the command.
          *
-         * @return The description string, or null if not applicable
+         * @return The task description
          */
         public String getDescription() {
             return description;
         }
 
         /**
-         * Sets the description for this command.
+         * Sets the task description for the command.
          *
-         * @param description The description to set
+         * @param description The task description
          */
         public void setDescription(String description) {
             this.description = description;
         }
 
         /**
-         * Gets a single parameter from the command.
+         * Returns the main parameter for the command.
          *
-         * @return The parameter string, or null if not applicable
+         * @return The main parameter
          */
         public String getParameter() {
             return parameter;
         }
 
         /**
-         * Sets a single parameter for this command.
+         * Sets the main parameter for the command.
          *
-         * @param parameter The parameter to set
+         * @param parameter The main parameter
          */
         public void setParameter(String parameter) {
             this.parameter = parameter;
         }
 
         /**
-         * Gets multiple parameters from the command.
+         * Returns an array of parameters for the command.
          *
-         * @return Array of parameter strings, or null if not applicable
+         * @return The array of parameters
          */
         public String[] getParameters() {
             return parameters;
         }
 
         /**
-         * Sets multiple parameters for this command.
+         * Sets the array of parameters for the command.
          *
-         * @param parameters The array of parameters to set
+         * @param parameters The array of parameters
          */
         public void setParameters(String[] parameters) {
             this.parameters = parameters;
@@ -120,235 +122,150 @@ public class Parser {
     }
 
     /**
-     * Parses the user input string and returns a Command object with extracted information.
+     * Parses the user input string into a Command object.
      *
-     * @param input The raw user input string
-     * @return A Command object containing the parsed command type and parameters
-     * @throws EmptyDescriptionException If a command requiring description has empty description
-     * @throws InvalidCommandFormatException If the command format is invalid
-     * @throws InvalidTaskNumberException If task number is invalid for mark/unmark/delete commands
+     * @param fullCommand The full user input string
+     * @return A Command object representing the parsed command
+     * @throws EmptyDescriptionException If a command requires a description but none is provided
+     * @throws InvalidCommandFormatException If a command's format is incorrect
+     * @throws UnknownCommandException If the command is not recognized
      */
-    public static Command parse(String input) throws EmptyDescriptionException, 
-            InvalidCommandFormatException, InvalidTaskNumberException {
-        
-        String trimmedInput = input.trim();
-        Command command;
+    public static Command parse(String fullCommand) throws EmptyDescriptionException,
+            InvalidCommandFormatException, UnknownCommandException {
 
-        if (trimmedInput.equals("bye")) {
-            command = new Command(CommandType.BYE, input);
-        } else if (trimmedInput.equals("list")) {
-            command = new Command(CommandType.LIST, input);
-        } else if (trimmedInput.startsWith("mark ")) {
-            command = parseMarkUnmarkCommand(input, true);
-        } else if (trimmedInput.startsWith("unmark ")) {
-            command = parseMarkUnmarkCommand(input, false);
-        } else if (trimmedInput.startsWith("todo")) {
-            command = parseTodoCommand(input);
-        } else if (trimmedInput.startsWith("deadline")) {
-            command = parseDeadlineCommand(input);
-        } else if (trimmedInput.startsWith("event")) {
-            command = parseEventCommand(input);
-        } else if (trimmedInput.startsWith("delete")) {
-            command = parseDeleteCommand(input);
-        } else {
-            command = new Command(CommandType.UNKNOWN, input);
+        fullCommand = fullCommand.trim();
+        String[] words = fullCommand.split(" ", 2);
+        String commandWord = words[0].toLowerCase();
+
+        Command command = new Command(CommandType.UNKNOWN, fullCommand);
+
+        switch (commandWord) {
+            case "bye":
+                command.type = CommandType.BYE;
+                break;
+
+            case "list":
+                command.type = CommandType.LIST;
+                break;
+
+            case "mark":
+                command.type = CommandType.MARK;
+                if (words.length < 2) {
+                    throw new InvalidCommandFormatException("Invalid format for the 'mark' command. Please specify a task number.");
+                }
+                command.setParameter(words[1].trim());
+                break;
+
+            case "unmark":
+                command.type = CommandType.UNMARK;
+                if (words.length < 2) {
+                    throw new InvalidCommandFormatException("Invalid format for the 'unmark' command. Please specify a task number.");
+                }
+                command.setParameter(words[1].trim());
+                break;
+
+            case "todo":
+                command.type = CommandType.TODO;
+                if (words.length < 2 || words[1].trim().isEmpty()) {
+                    throw new EmptyDescriptionException("todo");
+                }
+                command.setDescription(words[1].trim());
+                break;
+
+            case "deadline":
+                command.type = CommandType.DEADLINE;
+                if (words.length < 2) {
+                    throw new EmptyDescriptionException("deadline");
+                }
+                String[] deadlineParts = words[1].split(" /by ", 2);
+                if (deadlineParts.length < 2) {
+                    throw new InvalidCommandFormatException("Invalid format for the 'deadline' command. Description and due date are required. Format: deadline <description> /by <yyyy-MM-dd HHmm>");
+                }
+                command.setDescription(deadlineParts[0].trim());
+                command.setParameter(deadlineParts[1].trim());
+                break;
+
+            case "event":
+                command.type = CommandType.EVENT;
+                if (words.length < 2) {
+                    throw new EmptyDescriptionException("event");
+                }
+                String[] eventParts = words[1].split(" /from ", 2);
+                if (eventParts.length < 2) {
+                    throw new InvalidCommandFormatException("Invalid format for the 'event' command. Description, start and end times are required. Format: event <description> /from <start> /to <end>");
+                }
+                String[] fromToParts = eventParts[1].split(" /to ", 2);
+                if (fromToParts.length < 2) {
+                    throw new InvalidCommandFormatException("Invalid format for the 'event' command. Description, start and end times are required. Format: event <description> /from <start> /to <end>");
+                }
+                command.setDescription(eventParts[0].trim());
+                command.setParameters(new String[]{fromToParts[0].trim(), fromToParts[1].trim()});
+                break;
+
+            case "delete":
+                command.type = CommandType.DELETE;
+                if (words.length < 2) {
+                    throw new InvalidCommandFormatException("Invalid format for the 'delete' command. Please specify a task number.");
+                }
+                command.setParameter(words[1].trim());
+                break;
+
+            case "find":
+                command.type = CommandType.FIND;
+                if (words.length < 2 || words[1].trim().isEmpty()) {
+                    throw new InvalidCommandFormatException("Invalid format for the 'find' command. Please specify a keyword to search for.");
+                }
+                command.setParameter(words[1].trim());
+                break;
+
+            default:
+                throw new UnknownCommandException();
         }
 
         return command;
     }
 
     /**
-     * Parses mark and unmark commands to extract task number.
+     * Executes the given command by delegating to the appropriate methods in TaskList and Ui.
      *
-     * @param input The full command string
-     * @param isMark True if this is a mark command, false for unmark
-     * @return A Command object with the task number as parameter
+     * @param command The command to execute
+     * @param taskList The TaskList instance to operate on
+     * @param ui The Ui instance to display messages
+     * @throws UnknownCommandException If the command type is not recognized
+     * @throws InvalidCommandFormatException If the command format is incorrect
      * @throws InvalidTaskNumberException If the task number is invalid
+     * @throws InvalidDateTimeException If the date/time format is invalid
+     * @throws EmptyDescriptionException If a description is missing
      */
-    private static Command parseMarkUnmarkCommand(String input, boolean isMark) 
-            throws InvalidTaskNumberException {
-        Command command = new Command(isMark ? CommandType.MARK : CommandType.UNMARK, input);
-        
-        try {
-            String taskNumStr = input.substring(isMark ? 5 : 7).trim();
-            int taskNum = Integer.parseInt(taskNumStr);
-            command.setParameter(String.valueOf(taskNum));
-            return command;
-        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-            throw new InvalidTaskNumberException();
-        }
-    }
+    public static void execute(Command command, TaskList taskList, Ui ui) throws UnknownCommandException,
+            InvalidCommandFormatException, InvalidTaskNumberException, InvalidDateTimeException, EmptyDescriptionException {
 
-    /**
-     * Parses todo command to extract description.
-     *
-     * @param input The full command string
-     * @return A Command object with the todo description
-     * @throws EmptyDescriptionException If the todo description is empty
-     */
-    private static Command parseTodoCommand(String input) throws EmptyDescriptionException {
-        if (input.equals("todo")) {
-            throw new EmptyDescriptionException("todo");
-        }
-
-        Command command = new Command(CommandType.TODO, input);
-        String description = extractAndValidateDescription(input, 5, "todo");
-        command.setDescription(description);
-        return command;
-    }
-
-    /**
-     * Parses deadline command to extract description and due date/time.
-     *
-     * @param input The full command string
-     * @return A Command object with description and due date as parameters
-     * @throws EmptyDescriptionException If description or due date is empty
-     * @throws InvalidCommandFormatException If the command format is incorrect
-     */
-    private static Command parseDeadlineCommand(String input) 
-            throws EmptyDescriptionException, InvalidCommandFormatException {
-        if (input.equals("deadline")) {
-            throw new EmptyDescriptionException("deadline");
-        }
-
-        String[] parts = input.split(" /by ");
-        if (parts.length != 2) {
-            throw new InvalidCommandFormatException("deadline <description> /by <date time>");
-        }
-
-        Command command = new Command(CommandType.DEADLINE, input);
-        String description = extractAndValidateDescription(parts[0], 9, "deadline");
-        String dueDateTime = parts[1].trim();
-
-        if (dueDateTime.isEmpty()) {
-            throw new EmptyDescriptionException("deadline due date");
-        }
-
-        command.setDescription(description);
-        command.setParameter(dueDateTime);
-        return command;
-    }
-
-    /**
-     * Parses event command to extract description, start time, and end time.
-     *
-     * @param input The full command string
-     * @return A Command object with description and time parameters
-     * @throws EmptyDescriptionException If description or times are empty
-     * @throws InvalidCommandFormatException If the command format is incorrect
-     */
-    private static Command parseEventCommand(String input) 
-            throws EmptyDescriptionException, InvalidCommandFormatException {
-        if (input.equals("event")) {
-            throw new EmptyDescriptionException("event");
-        }
-
-        String[] parts = input.split(" /from ");
-        if (parts.length != 2) {
-            throw new InvalidCommandFormatException("event <description> /from <start> /to <end>");
-        }
-
-        String description = extractAndValidateDescription(parts[0], 6, "event");
-        String[] times = parts[1].split(" /to ");
-
-        if (times.length != 2) {
-            throw new InvalidCommandFormatException("event <description> /from <start> /to <end>");
-        }
-
-        String startTime = times[0].trim();
-        String endTime = times[1].trim();
-
-        if (startTime.isEmpty() || endTime.isEmpty()) {
-            throw new EmptyDescriptionException("event time");
-        }
-
-        Command command = new Command(CommandType.EVENT, input);
-        command.setDescription(description);
-        command.setParameters(new String[]{startTime, endTime});
-        return command;
-    }
-
-    /**
-     * Parses delete command to extract task number.
-     *
-     * @param input The full command string
-     * @return A Command object with the task number as parameter
-     * @throws InvalidTaskNumberException If the task number is invalid
-     * @throws InvalidCommandFormatException If the command format is incorrect
-     */
-    private static Command parseDeleteCommand(String input) 
-            throws InvalidTaskNumberException, InvalidCommandFormatException {
-        if (input.equals("delete")) {
-            throw new InvalidCommandFormatException("delete <task number>");
-        }
-
-        Command command = new Command(CommandType.DELETE, input);
-        
-        try {
-            String taskNumStr = input.substring(7).trim();
-            int taskNum = Integer.parseInt(taskNumStr);
-            command.setParameter(String.valueOf(taskNum));
-            return command;
-        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-            throw new InvalidTaskNumberException();
-        }
-    }
-
-    /**
-     * Extracts and validates description from a command string.
-     * Helper method following DRY principle.
-     *
-     * @param input The full command string
-     * @param startIndex The index where description starts
-     * @param taskType The type of task for error messaging
-     * @return The extracted and validated description
-     * @throws EmptyDescriptionException If the description is empty
-     */
-    private static String extractAndValidateDescription(String input, int startIndex, String taskType)
-            throws EmptyDescriptionException {
-        String description = input.substring(startIndex).trim();
-        if (description.isEmpty()) {
-            throw new EmptyDescriptionException(taskType);
-        }
-        return description;
-    }
-
-    /**
-     * Executes a parsed command on the given TaskList and provides feedback through Ui.
-     * Handles all business logic for command execution.
-     *
-     * @param command The parsed command to execute
-     * @param taskList The TaskList to operate on
-     * @param ui The Ui instance for user feedback
-     * @throws UnknownCommandException If the command type is unknown
-     * @throws InvalidTaskNumberException If task number is invalid
-     * @throws InvalidDateTimeException If date/time format is invalid
-     */
-    public static void execute(Command command, TaskList taskList, Ui ui) 
-            throws UnknownCommandException, InvalidTaskNumberException, InvalidDateTimeException {
-        
         switch (command.getType()) {
+            case BYE:
+                // Handled in main loop
+                break;
+
             case LIST:
                 ui.showTaskList(taskList);
                 break;
-                
+
             case MARK:
                 int markTaskNum = Integer.parseInt(command.getParameter());
-                Task markedTask = taskList.markTaskAsDone(markTaskNum);
-                ui.showMarkTaskMessage(markedTask, true);
+                Task markedTask = taskList.markTask(markTaskNum);
+                ui.showMarkUnmarkMessage(markedTask, true);
                 break;
-                
+
             case UNMARK:
                 int unmarkTaskNum = Integer.parseInt(command.getParameter());
-                Task unmarkedTask = taskList.markTaskAsNotDone(unmarkTaskNum);
-                ui.showMarkTaskMessage(unmarkedTask, false);
+                Task unmarkedTask = taskList.unmarkTask(unmarkTaskNum);
+                ui.showMarkUnmarkMessage(unmarkedTask, false);
                 break;
-                
+
             case TODO:
                 taskList.addTask(new Todo(command.getDescription()));
                 ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
                 break;
-                
+
             case DEADLINE:
                 try {
                     taskList.addTask(new Deadline(command.getDescription(), command.getParameter()));
@@ -357,7 +274,7 @@ public class Parser {
                     throw new InvalidDateTimeException(e.getMessage());
                 }
                 break;
-                
+
             case EVENT:
                 try {
                     String[] times = command.getParameters();
@@ -367,13 +284,19 @@ public class Parser {
                     throw new InvalidDateTimeException(e.getMessage());
                 }
                 break;
-                
+
             case DELETE:
                 int deleteTaskNum = Integer.parseInt(command.getParameter());
                 Task deletedTask = taskList.deleteTask(deleteTaskNum);
                 ui.showTaskDeletedMessage(deletedTask, taskList.size());
                 break;
-                
+
+            case FIND:
+                String keyword = command.getParameter();
+                ArrayList<Task> matchingTasks = taskList.findTasks(keyword);
+                ui.showMatchingTasks(matchingTasks);
+                break;
+
             case UNKNOWN:
             default:
                 throw new UnknownCommandException();
