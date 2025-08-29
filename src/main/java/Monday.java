@@ -24,25 +24,36 @@ public class Monday {
         while (true) {
             try {
                 input = ui.readCommand();
-                if (input.equals("bye")) {
-                    ui.showGoodbye();
-                    break;
-                } else if (input.equals("list")) {
-                    ui.showTaskList(inputs);
-                } else if (input.startsWith("mark ")) {
-                    handleMarkUnmark(inputs, input, true);
-                } else if (input.startsWith("unmark ")) {
-                    handleMarkUnmark(inputs, input, false);
-                } else if (input.startsWith("todo")) {
-                    addTodo(inputs, input);
-                } else if (input.startsWith("deadline")) {
-                    addDeadline(inputs, input);
-                } else if (input.startsWith("event")) {
-                    addEvent(inputs, input);
-                } else if (input.startsWith("delete")) {
-                    deleteTask(inputs, input);
-                } else {
-                    throw new UnknownCommandException();
+                Parser.Command command = Parser.parse(input);
+                
+                switch (command.getType()) {
+                    case BYE:
+                        ui.showGoodbye();
+                        return;
+                    case LIST:
+                        ui.showTaskList(inputs);
+                        break;
+                    case MARK:
+                        handleMarkUnmark(inputs, command, true);
+                        break;
+                    case UNMARK:
+                        handleMarkUnmark(inputs, command, false);
+                        break;
+                    case TODO:
+                        addTodo(inputs, command);
+                        break;
+                    case DEADLINE:
+                        addDeadline(inputs, command);
+                        break;
+                    case EVENT:
+                        addEvent(inputs, command);
+                        break;
+                    case DELETE:
+                        deleteTask(inputs, command);
+                        break;
+                    case UNKNOWN:
+                    default:
+                        throw new UnknownCommandException();
                 }
             } catch(EmptyDescriptionException | InvalidCommandFormatException |
                     UnknownCommandException | InvalidTaskNumberException | InvalidDateTimeException e) {
@@ -51,71 +62,42 @@ public class Monday {
         }
     }
 
-    private static void deleteTask(ArrayList<Task> inputs, String input) throws InvalidTaskNumberException, InvalidCommandFormatException
-    {
-        try {
-            if (input.equals("delete")) {
-                throw new InvalidCommandFormatException("delete <task number>");
-            }
-
-            int taskNum = Integer.parseInt(input.substring(7).trim());
-            if (taskNum < 1 || taskNum > inputs.size()) {
-                throw new InvalidTaskNumberException();
-            }
-
-            Task deletedTask = inputs.remove(taskNum - 1);
-
-            // Save to file after deletion
-            Storage.saveTasks(inputs);
-
-            ui.showTaskDeletedMessage(deletedTask, inputs.size());
-
-        } catch (NumberFormatException | IndexOutOfBoundsException e) {
-            throw new InvalidTaskNumberException();
-        }
-    }
-
-
-    private static void handleMarkUnmark(ArrayList<Task> inputs, String input, boolean mark)
+    private static void deleteTask(ArrayList<Task> inputs, Parser.Command command) 
             throws InvalidTaskNumberException {
-        try {
-            int taskNum = Integer.parseInt(input.substring(mark ? 5 : 7));
-            if (taskNum < 1 || taskNum > inputs.size()) {
-                throw new InvalidTaskNumberException();
-            }
-
-            Task task = inputs.get(taskNum - 1);
-            if (mark) task.markAsDone(); else task.markAsNotDone();
-
-            // Save to file after marking/unmarking
-            Storage.saveTasks(inputs);
-
-            ui.showMarkTaskMessage(task, mark);
-        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+        int taskNum = Integer.parseInt(command.getParameter());
+        if (taskNum < 1 || taskNum > inputs.size()) {
             throw new InvalidTaskNumberException();
         }
+
+        Task deletedTask = inputs.remove(taskNum - 1);
+
+        // Save to file after deletion
+        Storage.saveTasks(inputs);
+
+        ui.showTaskDeletedMessage(deletedTask, inputs.size());
     }
 
-    private static void addDeadline(ArrayList<Task> inputs, String input)
-            throws EmptyDescriptionException, InvalidCommandFormatException, InvalidDateTimeException {
-        if (input.equals("deadline")) {
-            throw new EmptyDescriptionException("deadline");
+
+    private static void handleMarkUnmark(ArrayList<Task> inputs, Parser.Command command, boolean mark)
+            throws InvalidTaskNumberException {
+        int taskNum = Integer.parseInt(command.getParameter());
+        if (taskNum < 1 || taskNum > inputs.size()) {
+            throw new InvalidTaskNumberException();
         }
 
-        String[] parts = input.split(" /by ");
-        if (parts.length != 2) {
-            throw new InvalidCommandFormatException("deadline <description> /by <date time>");
-        }
+        Task task = inputs.get(taskNum - 1);
+        if (mark) task.markAsDone(); else task.markAsNotDone();
 
-        String desc = extractAndValidateDescription(parts[0], 9, "deadline");
-        String dueDateTime = parts[1].trim();
+        // Save to file after marking/unmarking
+        Storage.saveTasks(inputs);
 
-        if (dueDateTime.isEmpty()) {
-            throw new EmptyDescriptionException("deadline due date");
-        }
+        ui.showMarkTaskMessage(task, mark);
+    }
 
+    private static void addDeadline(ArrayList<Task> inputs, Parser.Command command)
+            throws InvalidDateTimeException {
         try {
-            inputs.add(new Deadline(desc, dueDateTime));
+            inputs.add(new Deadline(command.getDescription(), command.getParameter()));
 
             // Save to file after adding
             Storage.saveTasks(inputs);
@@ -126,14 +108,8 @@ public class Monday {
         }
     }
 
-    private static void addTodo(ArrayList<Task> inputs, String input)
-            throws EmptyDescriptionException {
-        if (input.equals("todo")) {
-            throw new EmptyDescriptionException("todo");
-        }
-        String description = extractAndValidateDescription(input, 5, "todo");
-
-        inputs.add(new Todo(description));
+    private static void addTodo(ArrayList<Task> inputs, Parser.Command command) {
+        inputs.add(new Todo(command.getDescription()));
 
         // Save to file after adding
         Storage.saveTasks(inputs);
@@ -141,33 +117,11 @@ public class Monday {
         ui.showTaskAddedMessage(inputs.get(inputs.size() - 1), inputs.size());
     }
 
-    private static void addEvent(ArrayList<Task> inputs, String input)
-            throws EmptyDescriptionException, InvalidCommandFormatException, InvalidDateTimeException {
-        if (input.equals("event")) {
-            throw new EmptyDescriptionException("event");
-        }
-
-        String[] parts = input.split(" /from ");
-        if (parts.length != 2) {
-            throw new InvalidCommandFormatException("event <description> /from <start> /to <end>");
-        }
-
-        String desc = extractAndValidateDescription(parts[0], 6, "event");
-        String[] times = parts[1].split(" /to ");
-
-        if (times.length != 2) {
-            throw new InvalidCommandFormatException("event <description> /from <start> /to <end>");
-        }
-
-        String startTime = times[0].trim();
-        String endTime = times[1].trim();
-
-        if (startTime.isEmpty() || endTime.isEmpty()) {
-            throw new EmptyDescriptionException("event time");
-        }
-
+    private static void addEvent(ArrayList<Task> inputs, Parser.Command command)
+            throws InvalidDateTimeException {
         try {
-            inputs.add(new Event(desc, startTime, endTime));
+            String[] times = command.getParameters();
+            inputs.add(new Event(command.getDescription(), times[0], times[1]));
 
             // Save to file after adding
             Storage.saveTasks(inputs);
@@ -178,13 +132,4 @@ public class Monday {
         }
     }
 
-    // Helper method following DRY principle
-    private static String extractAndValidateDescription(String input, int startIndex, String taskType)
-            throws EmptyDescriptionException {
-        String description = input.substring(startIndex).trim();
-        if (description.isEmpty()) {
-            throw new EmptyDescriptionException(taskType);
-        }
-        return description;
-    }
 }
