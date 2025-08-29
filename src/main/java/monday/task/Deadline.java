@@ -1,9 +1,11 @@
+package monday.task;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 // Deadline class - task with due date as LocalDateTime
-class Deadline extends Task {
+public class Deadline extends Task {
     private LocalDateTime dueDateTime;
 
     // Constructor that accepts string and parses it to LocalDateTime

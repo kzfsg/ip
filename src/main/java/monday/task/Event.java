@@ -1,8 +1,10 @@
+package monday.task;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
-class Event extends Task {
+public class Event extends Task {
     private LocalDateTime startDateTime;
     private LocalDateTime endDateTime;
 

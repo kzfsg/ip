@@ -1,5 +1,8 @@
-import java.util.ArrayList;
+package monday.ui;
+
 import java.util.Scanner;
+import monday.task.Task;
+import monday.task.TaskList;
 
 /**
  * Handles all user interface interactions for the Monday task manager.

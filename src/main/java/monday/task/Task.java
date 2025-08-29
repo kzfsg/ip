@@ -1,3 +1,5 @@
+package monday.task;
+
 public class Task {
     // Changed to protected to allow subclass access while maintaining encapsulation
     // This enables subclasses to access core data without breaking the abstraction
