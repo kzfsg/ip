@@ -1,135 +1,65 @@
-import java.util.ArrayList;
-
+/**
+ * Main application class that orchestrates the Monday task manager.
+ * Serves as a thin layer that coordinates between Storage, TaskList, Ui, and Parser.
+ */
 public class Monday {
-    private static Ui ui = new Ui();
-    public static void main(String[] args){
+    private Storage storage;
+    private TaskList tasks;
+    private Ui ui;
+
+    /**
+     * Constructs a Monday application instance with the specified file path.
+     * Initializes all components and loads existing tasks from storage.
+     *
+     * @param filePath The path to the file where tasks are stored
+     */
+    public Monday(String filePath) {
+        ui = new Ui();
+        storage = new Storage(filePath);
+        
         try {
-            ui.showWelcome();
-            runChatbot();
-        } catch (UnknownCommandException e) {
+            tasks = new TaskList(storage.load(), storage);
+            ui.showLoadedTasksMessage(tasks.size());
+        } catch (TaskLoadingException e) {
             ui.showError(e.getMessage());
-        } finally {
-            ui.close();
+            tasks = new TaskList(storage);
         }
     }
 
-
-    private static void runChatbot() throws UnknownCommandException {
-        String input;
-
-        // Load existing tasks from file at startup
-        ArrayList<Task> inputs = Storage.loadTasks();
-        ui.showLoadedTasksMessage(inputs.size());
-
+    /**
+     * Runs the main application loop.
+     * Handles user input, command parsing, and execution until the user exits.
+     */
+    public void run() {
+        ui.showWelcome();
+        
         while (true) {
             try {
-                input = ui.readCommand();
-                Parser.Command command = Parser.parse(input);
+                String input = ui.readCommand();
                 
-                switch (command.getType()) {
-                    case BYE:
-                        ui.showGoodbye();
-                        return;
-                    case LIST:
-                        ui.showTaskList(inputs);
-                        break;
-                    case MARK:
-                        handleMarkUnmark(inputs, command, true);
-                        break;
-                    case UNMARK:
-                        handleMarkUnmark(inputs, command, false);
-                        break;
-                    case TODO:
-                        addTodo(inputs, command);
-                        break;
-                    case DEADLINE:
-                        addDeadline(inputs, command);
-                        break;
-                    case EVENT:
-                        addEvent(inputs, command);
-                        break;
-                    case DELETE:
-                        deleteTask(inputs, command);
-                        break;
-                    case UNKNOWN:
-                    default:
-                        throw new UnknownCommandException();
+                if (input.equals("bye")) {
+                    ui.showGoodbye();
+                    break;
                 }
-            } catch(EmptyDescriptionException | InvalidCommandFormatException |
-                    UnknownCommandException | InvalidTaskNumberException | InvalidDateTimeException e) {
+                
+                Parser.Command command = Parser.parse(input);
+                Parser.execute(command, tasks, ui);
+                
+            } catch (EmptyDescriptionException | InvalidCommandFormatException |
+                     UnknownCommandException | InvalidTaskNumberException | InvalidDateTimeException e) {
                 ui.showError(e.getMessage());
             }
         }
+        
+        ui.close();
     }
 
-    private static void deleteTask(ArrayList<Task> inputs, Parser.Command command) 
-            throws InvalidTaskNumberException {
-        int taskNum = Integer.parseInt(command.getParameter());
-        if (taskNum < 1 || taskNum > inputs.size()) {
-            throw new InvalidTaskNumberException();
-        }
-
-        Task deletedTask = inputs.remove(taskNum - 1);
-
-        // Save to file after deletion
-        Storage.saveTasks(inputs);
-
-        ui.showTaskDeletedMessage(deletedTask, inputs.size());
+    /**
+     * Entry point for the Monday task manager application.
+     *
+     * @param args Command line arguments (not used)
+     */
+    public static void main(String[] args) {
+        new Monday("./data/monday.txt").run();
     }
-
-
-    private static void handleMarkUnmark(ArrayList<Task> inputs, Parser.Command command, boolean mark)
-            throws InvalidTaskNumberException {
-        int taskNum = Integer.parseInt(command.getParameter());
-        if (taskNum < 1 || taskNum > inputs.size()) {
-            throw new InvalidTaskNumberException();
-        }
-
-        Task task = inputs.get(taskNum - 1);
-        if (mark) task.markAsDone(); else task.markAsNotDone();
-
-        // Save to file after marking/unmarking
-        Storage.saveTasks(inputs);
-
-        ui.showMarkTaskMessage(task, mark);
-    }
-
-    private static void addDeadline(ArrayList<Task> inputs, Parser.Command command)
-            throws InvalidDateTimeException {
-        try {
-            inputs.add(new Deadline(command.getDescription(), command.getParameter()));
-
-            // Save to file after adding
-            Storage.saveTasks(inputs);
-
-            ui.showTaskAddedMessage(inputs.get(inputs.size() - 1), inputs.size());
-        } catch (java.time.format.DateTimeParseException e) {
-            throw new InvalidDateTimeException(e.getMessage());
-        }
-    }
-
-    private static void addTodo(ArrayList<Task> inputs, Parser.Command command) {
-        inputs.add(new Todo(command.getDescription()));
-
-        // Save to file after adding
-        Storage.saveTasks(inputs);
-
-        ui.showTaskAddedMessage(inputs.get(inputs.size() - 1), inputs.size());
-    }
-
-    private static void addEvent(ArrayList<Task> inputs, Parser.Command command)
-            throws InvalidDateTimeException {
-        try {
-            String[] times = command.getParameters();
-            inputs.add(new Event(command.getDescription(), times[0], times[1]));
-
-            // Save to file after adding
-            Storage.saveTasks(inputs);
-
-            ui.showTaskAddedMessage(inputs.get(inputs.size() - 1), inputs.size());
-        } catch (java.time.format.DateTimeParseException | IllegalArgumentException e) {
-            throw new InvalidDateTimeException(e.getMessage());
-        }
-    }
-
 }

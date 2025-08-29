@@ -298,4 +298,71 @@ public class Parser {
         }
         return description;
     }
+
+    /**
+     * Executes a parsed command on the given TaskList and provides feedback through Ui.
+     * Handles all business logic for command execution.
+     *
+     * @param command The parsed command to execute
+     * @param taskList The TaskList to operate on
+     * @param ui The Ui instance for user feedback
+     * @throws UnknownCommandException If the command type is unknown
+     * @throws InvalidTaskNumberException If task number is invalid
+     * @throws InvalidDateTimeException If date/time format is invalid
+     */
+    public static void execute(Command command, TaskList taskList, Ui ui) 
+            throws UnknownCommandException, InvalidTaskNumberException, InvalidDateTimeException {
+        
+        switch (command.getType()) {
+            case LIST:
+                ui.showTaskList(taskList);
+                break;
+                
+            case MARK:
+                int markTaskNum = Integer.parseInt(command.getParameter());
+                Task markedTask = taskList.markTaskAsDone(markTaskNum);
+                ui.showMarkTaskMessage(markedTask, true);
+                break;
+                
+            case UNMARK:
+                int unmarkTaskNum = Integer.parseInt(command.getParameter());
+                Task unmarkedTask = taskList.markTaskAsNotDone(unmarkTaskNum);
+                ui.showMarkTaskMessage(unmarkedTask, false);
+                break;
+                
+            case TODO:
+                taskList.addTask(new Todo(command.getDescription()));
+                ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
+                break;
+                
+            case DEADLINE:
+                try {
+                    taskList.addTask(new Deadline(command.getDescription(), command.getParameter()));
+                    ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
+                } catch (java.time.format.DateTimeParseException e) {
+                    throw new InvalidDateTimeException(e.getMessage());
+                }
+                break;
+                
+            case EVENT:
+                try {
+                    String[] times = command.getParameters();
+                    taskList.addTask(new Event(command.getDescription(), times[0], times[1]));
+                    ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
+                } catch (java.time.format.DateTimeParseException | IllegalArgumentException e) {
+                    throw new InvalidDateTimeException(e.getMessage());
+                }
+                break;
+                
+            case DELETE:
+                int deleteTaskNum = Integer.parseInt(command.getParameter());
+                Task deletedTask = taskList.deleteTask(deleteTaskNum);
+                ui.showTaskDeletedMessage(deletedTask, taskList.size());
+                break;
+                
+            case UNKNOWN:
+            default:
+                throw new UnknownCommandException();
+        }
+    }
 }

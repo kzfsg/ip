@@ -52,17 +52,10 @@ public class Ui {
      * Displays the list of tasks to the user.
      * Shows a message if the list is empty, otherwise displays all tasks with numbering.
      *
-     * @param tasks The ArrayList of tasks to display
+     * @param taskList The TaskList to display
      */
-    public void showTaskList(ArrayList<Task> tasks) {
-        if (tasks.isEmpty()) {
-            System.out.println("Your task list is empty.");
-        } else {
-            System.out.println("Here are the tasks in your list:");
-            for (int i = 0; i < tasks.size(); i++) {
-                System.out.println((i + 1) + "." + tasks.get(i));
-            }
-        }
+    public void showTaskList(TaskList taskList) {
+        System.out.println(taskList.toString());
     }
 
     /**
