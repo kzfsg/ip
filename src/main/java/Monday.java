@@ -1,49 +1,34 @@
-import java.util.Scanner;
 import java.util.ArrayList;
 
 public class Monday {
+    private static Ui ui = new Ui();
     public static void main(String[] args){
         try {
-            showWelcome();
+            ui.showWelcome();
             runChatbot();
         } catch (UnknownCommandException e) {
-            System.out.println(e.getMessage());
+            ui.showError(e.getMessage());
+        } finally {
+            ui.close();
         }
     }
 
-    private static void showWelcome() {
-        String logo = " __  __                 _             \n"
-                + "|  \\/  |               | |            \n"
-                + "| \\  / | ___  _ __   __| | __ _ _   _  \n"
-                + "| |\\/| |/ _ \\| '_ \\ / _` |/ _` | | | | \n"
-                + "| |  | | (_) | | | | (_| | (_| | |_| | \n"
-                + "|_|  |_|\\___/|_| |_|\\__,_|\\__,_|\\__, | \n"
-                + "                                __/ | \n"
-                + "                               |___/  \n";
-
-        System.out.println("Hello I'm\n" + logo);
-        System.out.println("What can I do for you?\n");
-    }
 
     private static void runChatbot() throws UnknownCommandException {
-        Scanner scanner = new Scanner(System.in);
         String input;
 
         // Load existing tasks from file at startup
         ArrayList<Task> inputs = Storage.loadTasks();
-
-        if (inputs.size() > 0) {
-            System.out.println("Loaded " + inputs.size() + " task(s) from previous session.\n");
-        }
+        ui.showLoadedTasksMessage(inputs.size());
 
         while (true) {
             try {
-                input = scanner.nextLine();
+                input = ui.readCommand();
                 if (input.equals("bye")) {
-                    System.out.println("Bye. Hope to see you again soon!\n");
+                    ui.showGoodbye();
                     break;
                 } else if (input.equals("list")) {
-                    displayList(inputs);
+                    ui.showTaskList(inputs);
                 } else if (input.startsWith("mark ")) {
                     handleMarkUnmark(inputs, input, true);
                 } else if (input.startsWith("unmark ")) {
@@ -61,12 +46,9 @@ public class Monday {
                 }
             } catch(EmptyDescriptionException | InvalidCommandFormatException |
                     UnknownCommandException | InvalidTaskNumberException | InvalidDateTimeException e) {
-                System.out.println(e.getMessage());
+                ui.showError(e.getMessage());
             }
-
         }
-
-        scanner.close();
     }
 
     private static void deleteTask(ArrayList<Task> inputs, String input) throws InvalidTaskNumberException, InvalidCommandFormatException
@@ -86,25 +68,13 @@ public class Monday {
             // Save to file after deletion
             Storage.saveTasks(inputs);
 
-            System.out.println("Noted. I've removed this task:");
-            System.out.println("  " + deletedTask);
-            System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+            ui.showTaskDeletedMessage(deletedTask, inputs.size());
 
         } catch (NumberFormatException | IndexOutOfBoundsException e) {
             throw new InvalidTaskNumberException();
         }
     }
 
-    private static void displayList(ArrayList<Task> inputs) {
-        if (inputs.isEmpty()) {
-            System.out.println("Your task list is empty.");
-        } else {
-            System.out.println("Here are the tasks in your list:");
-            for (int i = 0; i < inputs.size(); i++) {
-                System.out.println((i + 1) + "." + inputs.get(i));
-            }
-        }
-    }
 
     private static void handleMarkUnmark(ArrayList<Task> inputs, String input, boolean mark)
             throws InvalidTaskNumberException {
@@ -120,8 +90,7 @@ public class Monday {
             // Save to file after marking/unmarking
             Storage.saveTasks(inputs);
 
-            System.out.println((mark ? "Nice! I've marked this task as done:" :
-                    "OK, I've marked this task as not done yet:") + "\n  " + task);
+            ui.showMarkTaskMessage(task, mark);
         } catch (NumberFormatException | IndexOutOfBoundsException e) {
             throw new InvalidTaskNumberException();
         }
@@ -151,9 +120,7 @@ public class Monday {
             // Save to file after adding
             Storage.saveTasks(inputs);
 
-            System.out.println("Got it. I've added this task:");
-            System.out.println("  " + inputs.get(inputs.size() - 1));
-            System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+            ui.showTaskAddedMessage(inputs.get(inputs.size() - 1), inputs.size());
         } catch (java.time.format.DateTimeParseException e) {
             throw new InvalidDateTimeException(e.getMessage());
         }
@@ -171,9 +138,7 @@ public class Monday {
         // Save to file after adding
         Storage.saveTasks(inputs);
 
-        System.out.println("Got it. I've added this task:");
-        System.out.println("  [T][ ] " + description);
-        System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+        ui.showTaskAddedMessage(inputs.get(inputs.size() - 1), inputs.size());
     }
 
     private static void addEvent(ArrayList<Task> inputs, String input)
@@ -207,9 +172,7 @@ public class Monday {
             // Save to file after adding
             Storage.saveTasks(inputs);
 
-            System.out.println("Got it. I've added this task:");
-            System.out.println("  " + inputs.get(inputs.size() - 1));
-            System.out.println("Now you have " + inputs.size() + " tasks in the list.");
+            ui.showTaskAddedMessage(inputs.get(inputs.size() - 1), inputs.size());
         } catch (java.time.format.DateTimeParseException | IllegalArgumentException e) {
             throw new InvalidDateTimeException(e.getMessage());
         }
