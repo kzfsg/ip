@@ -70,6 +70,13 @@ public class Monday {
     }
 
     /**
+     * Generates a response for the user's chat message.
+     */
+    public String getResponse(String input) {
+        return "Monday heard: " + input;
+    }
+
+    /**
      * Entry point for the Monday task manager application.
      *
      * @param args Command line arguments (not used)
