@@ -24,7 +24,7 @@ public class Parser {
      * Represents the different types of commands that can be parsed.
      */
     public enum CommandType {
-        BYE, LIST, MARK, UNMARK, TODO, DEADLINE, EVENT, DELETE, FIND, UNKNOWN
+        BYE, LIST, MARK, UNMARK, TODO, DEADLINE, EVENT, DELETE, FIND, HELP, UNKNOWN
     }
 
     /**
@@ -218,6 +218,10 @@ public class Parser {
                 command.setParameter(words[1].trim());
                 break;
 
+            case "help":
+                command.type = CommandType.HELP;
+                break;
+
             default:
                 throw new UnknownCommandException();
         }
@@ -295,6 +299,10 @@ public class Parser {
                 String keyword = command.getParameter();
                 ArrayList<Task> matchingTasks = taskList.findTasks(keyword);
                 ui.showMatchingTasks(matchingTasks);
+                break;
+
+            case HELP:
+                ui.showHelp();
                 break;
 
             case UNKNOWN:

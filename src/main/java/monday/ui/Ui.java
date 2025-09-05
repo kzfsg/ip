@@ -125,6 +125,52 @@ public class Ui {
     }
 
     /**
+     * Displays help information showing all available commands and their usage.
+     */
+    public void showHelp() {
+        System.out.println("Here are the available commands:\n");
+        System.out.println("1. list - Display all tasks");
+        System.out.println("   Usage: list");
+        System.out.println();
+        System.out.println("2. todo - Add a simple task");
+        System.out.println("   Usage: todo <description>");
+        System.out.println("   Example: todo read book");
+        System.out.println();
+        System.out.println("3. deadline - Add a task with a due date");
+        System.out.println("   Usage: deadline <description> /by <yyyy-MM-dd HHmm>");
+        System.out.println("   Example: deadline return book /by 2024-12-31 1800");
+        System.out.println();
+        System.out.println("4. event - Add an event with start and end times");
+        System.out.println("   Usage: event <description> /from <yyyy-MM-dd HHmm> /to <yyyy-MM-dd HHmm>");
+        System.out.println("   Example: event project meeting /from 2024-12-01 1400 /to 2024-12-01 1600");
+        System.out.println();
+        System.out.println("5. mark - Mark a task as completed");
+        System.out.println("   Usage: mark <task_number>");
+        System.out.println("   Example: mark 1");
+        System.out.println();
+        System.out.println("6. unmark - Mark a task as not completed");
+        System.out.println("   Usage: unmark <task_number>");
+        System.out.println("   Example: unmark 1");
+        System.out.println();
+        System.out.println("7. delete - Remove a task from the list");
+        System.out.println("   Usage: delete <task_number>");
+        System.out.println("   Example: delete 1");
+        System.out.println();
+        System.out.println("8. find - Search for tasks containing a keyword");
+        System.out.println("   Usage: find <keyword>");
+        System.out.println("   Example: find book");
+        System.out.println();
+        System.out.println("9. help - Show this help message");
+        System.out.println("   Usage: help");
+        System.out.println();
+        System.out.println("10. bye - Exit the application");
+        System.out.println("    Usage: bye");
+        System.out.println();
+        System.out.println("Note: Task numbers are 1-based (start from 1)");
+        System.out.println("Date format: yyyy-MM-dd HHmm (e.g., 2024-12-31 1800 for Dec 31, 2024 at 6:00 PM)");
+    }
+
+    /**
      * Displays an error message to the user.
      *
      * @param message The error message to display
