@@ -251,13 +251,13 @@ public class Parser {
 
             case MARK:
                 int markTaskNum = Integer.parseInt(command.getParameter());
-                Task markedTask = taskList.markTask(markTaskNum);
+                Task markedTask = taskList.markTaskAsDone(markTaskNum);
                 ui.showMarkUnmarkMessage(markedTask, true);
                 break;
 
             case UNMARK:
                 int unmarkTaskNum = Integer.parseInt(command.getParameter());
-                Task unmarkedTask = taskList.unmarkTask(unmarkTaskNum);
+                Task unmarkedTask = taskList.markTaskAsNotDone(unmarkTaskNum);
                 ui.showMarkUnmarkMessage(unmarkedTask, false);
                 break;
 
