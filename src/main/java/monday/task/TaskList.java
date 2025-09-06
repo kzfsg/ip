@@ -67,6 +67,20 @@ public class TaskList {
     }
 
     /**
+     * Adds multiple tasks to the task list and automatically saves if storage is available.
+     *
+     * @param tasks The tasks to add
+     */
+    public void addTasks(Task... tasks) {
+        for (Task task : tasks) {
+            if (task != null) {
+                this.tasks.add(task);
+            }
+        }
+        autoSave();
+    }
+
+    /**
      * Removes a task from the task list at the specified index and automatically saves.
      *
      * @param index The 1-based index of the task to remove
