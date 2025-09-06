@@ -65,7 +65,15 @@ public class Monday {
             }
         }
 
+
         ui.close();
+    }
+
+    /**
+     * Generates a response for the user's chat message.
+     */
+    public String getResponse(String input) {
+        return "Monday heard: " + input;
     }
 
     /**
