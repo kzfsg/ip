@@ -25,7 +25,7 @@ public class Main extends Application {
             stage.setResizable(false);
             stage.setMinHeight(600.0);
             stage.setMinWidth(400.0);
-            fxmlLoader.<MainWindow>getController().setMonday(monday);  // inject the Monday instance
+            fxmlLoader.<MainWindow>getController().setMonday(monday); // inject the Monday instance
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();

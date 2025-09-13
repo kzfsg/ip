@@ -1,7 +1,8 @@
 package monday.task;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -9,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * This class tests the TaskList class methods to make sure they work correctly.
  */
 public class TaskListTest {
-    
     private TaskList taskList;
 
     /**
@@ -39,7 +39,7 @@ public class TaskListTest {
         // Step 1: Add one task
         Todo todo = new Todo("test task");
         taskList.addTask(todo);
-        
+
         // Step 2: Check that size is now 1
         assertEquals(1, taskList.size());
     }
@@ -53,7 +53,7 @@ public class TaskListTest {
         taskList.addTask(new Todo("task 1"));
         taskList.addTask(new Todo("task 2"));
         taskList.addTask(new Todo("task 3"));
-        
+
         // Step 2: Check that size is 3
         assertEquals(3, taskList.size());
     }
@@ -66,10 +66,10 @@ public class TaskListTest {
         // Step 1: Add a task
         taskList.addTask(new Todo("test task"));
         assertEquals(1, taskList.size()); // Should be 1
-        
+
         // Step 2: Remove the task (task number 1)
         taskList.deleteTask(1);
-        
+
         // Step 3: Check that size is back to 0
         assertEquals(0, taskList.size());
     }

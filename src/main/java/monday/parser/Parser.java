@@ -7,11 +7,11 @@ import monday.exception.InvalidCommandFormatException;
 import monday.exception.InvalidDateTimeException;
 import monday.exception.InvalidTaskNumberException;
 import monday.exception.UnknownCommandException;
+import monday.task.Deadline;
+import monday.task.Event;
 import monday.task.Task;
 import monday.task.TaskList;
 import monday.task.Todo;
-import monday.task.Deadline;
-import monday.task.Event;
 import monday.ui.Ui;
 
 /**
@@ -149,7 +149,8 @@ public class Parser {
     private static void parseMarkCommand(Command command, String[] words) throws InvalidCommandFormatException {
         command.type = CommandType.MARK;
         if (words.length < 2) {
-            throw new InvalidCommandFormatException("Invalid format for the 'mark' command. Please specify a task number.");
+            throw new InvalidCommandFormatException(
+                    "Invalid format for the 'mark' command. Please specify a task number.");
         }
         command.setParameter(words[1].trim());
     }
@@ -164,7 +165,8 @@ public class Parser {
     private static void parseUnmarkCommand(Command command, String[] words) throws InvalidCommandFormatException {
         command.type = CommandType.UNMARK;
         if (words.length < 2) {
-            throw new InvalidCommandFormatException("Invalid format for the 'unmark' command. Please specify a task number.");
+            throw new InvalidCommandFormatException(
+                    "Invalid format for the 'unmark' command. Please specify a task number.");
         }
         command.setParameter(words[1].trim());
     }
@@ -199,7 +201,9 @@ public class Parser {
         }
         String[] deadlineParts = words[1].split(" /by ", 2);
         if (deadlineParts.length < 2) {
-            throw new InvalidCommandFormatException("Invalid format for the 'deadline' command. Description and due date are required. Format: deadline <description> /by <yyyy-MM-dd HHmm>");
+            throw new InvalidCommandFormatException(
+                    "Invalid format for the 'deadline' command. Description and due date are required. " +
+                    "Format: deadline <description> /by <yyyy-MM-dd HHmm>");
         }
         command.setDescription(deadlineParts[0].trim());
         command.setParameter(deadlineParts[1].trim());
@@ -220,11 +224,15 @@ public class Parser {
         }
         String[] eventParts = words[1].split(" /from ", 2);
         if (eventParts.length < 2) {
-            throw new InvalidCommandFormatException("Invalid format for the 'event' command. Description, start and end times are required. Format: event <description> /from <start> /to <end>");
+            throw new InvalidCommandFormatException(
+                    "Invalid format for the 'event' command. Description, start and end times are required. " +
+                    "Format: event <description> /from <start> /to <end>");
         }
         String[] fromToParts = eventParts[1].split(" /to ", 2);
         if (fromToParts.length < 2) {
-            throw new InvalidCommandFormatException("Invalid format for the 'event' command. Description, start and end times are required. Format: event <description> /from <start> /to <end>");
+            throw new InvalidCommandFormatException(
+                    "Invalid format for the 'event' command. Description, start and end times are required. " +
+                    "Format: event <description> /from <start> /to <end>");
         }
         command.setDescription(eventParts[0].trim());
         command.setParameters(new String[]{fromToParts[0].trim(), fromToParts[1].trim()});
@@ -240,7 +248,8 @@ public class Parser {
     private static void parseDeleteCommand(Command command, String[] words) throws InvalidCommandFormatException {
         command.type = CommandType.DELETE;
         if (words.length < 2) {
-            throw new InvalidCommandFormatException("Invalid format for the 'delete' command. Please specify a task number.");
+            throw new InvalidCommandFormatException(
+                    "Invalid format for the 'delete' command. Please specify a task number.");
         }
         command.setParameter(words[1].trim());
     }
@@ -255,7 +264,8 @@ public class Parser {
     private static void parseFindCommand(Command command, String[] words) throws InvalidCommandFormatException {
         command.type = CommandType.FIND;
         if (words.length < 2 || words[1].trim().isEmpty()) {
-            throw new InvalidCommandFormatException("Invalid format for the 'find' command. Please specify a keyword to search for.");
+            throw new InvalidCommandFormatException(
+                    "Invalid format for the 'find' command. Please specify a keyword to search for.");
         }
         command.setParameter(words[1].trim());
     }
@@ -465,8 +475,9 @@ public class Parser {
      * @throws InvalidDateTimeException If the date/time format is invalid
      * @throws EmptyDescriptionException If a description is missing
      */
-    public static void execute(Command command, TaskList taskList, Ui ui) throws UnknownCommandException,
-            InvalidCommandFormatException, InvalidTaskNumberException, InvalidDateTimeException, EmptyDescriptionException {
+    public static void execute(Command command, TaskList taskList, Ui ui)
+            throws UnknownCommandException, InvalidCommandFormatException, InvalidTaskNumberException,
+            InvalidDateTimeException, EmptyDescriptionException {
 
         switch (command.getType()) {
             case BYE:

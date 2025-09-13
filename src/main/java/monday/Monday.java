@@ -59,8 +59,8 @@ public class Monday {
 
                 Parser.execute(command, tasks, ui);
 
-            } catch (EmptyDescriptionException | InvalidCommandFormatException |
-                     UnknownCommandException | InvalidTaskNumberException | InvalidDateTimeException e) {
+            } catch (EmptyDescriptionException | InvalidCommandFormatException
+                     | UnknownCommandException | InvalidTaskNumberException | InvalidDateTimeException e) {
                 ui.showError(e.getMessage());
             }
         }

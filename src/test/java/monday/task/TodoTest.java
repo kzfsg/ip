@@ -1,6 +1,7 @@
 package monday.task;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -17,10 +18,10 @@ public class TodoTest {
     public void testToString() {
         // Step 1: Create a new Todo task
         Todo todo = new Todo("buy groceries");
-        
+
         // Step 2: Get the string representation
         String result = todo.toString();
-        
+
         // Step 3: Check if it matches what we expect
         // A new Todo should show [T][ ] followed by the description
         String expected = "[T][ ] buy groceries";
@@ -34,13 +35,13 @@ public class TodoTest {
     public void testToString_whenDone() {
         // Step 1: Create a new Todo task
         Todo todo = new Todo("buy groceries");
-        
+
         // Step 2: Mark it as done
         todo.markAsDone();
-        
+
         // Step 3: Get the string representation
         String result = todo.toString();
-        
+
         // Step 4: Check if it shows [X] for completed task
         String expected = "[T][X] buy groceries";
         assertEquals(expected, result);
