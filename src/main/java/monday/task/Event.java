@@ -39,8 +39,14 @@ public class Event extends Task {
     }
 
     /**
-     * Parse various date/time formats into LocalDateTime
-     * Supports: yyyy-MM-dd HHmm, d/M/yyyy HHmm
+     * Parses various date/time formats into a LocalDateTime object.
+     * Supported formats:
+     * - yyyy-MM-dd HHmm (e.g., 2019-12-02 1800)
+     * - d/M/yyyy HHmm (e.g., 2/12/2019 1800)
+     *
+     * @param dateTimeStr the string representation of the date/time
+     * @return the corresponding LocalDateTime object
+     * @throws DateTimeParseException if the input string cannot be parsed into a valid LocalDateTime
      */
     private LocalDateTime parseDateTimeFromString(String dateTimeStr) throws DateTimeParseException {
         dateTimeStr = dateTimeStr.trim();
