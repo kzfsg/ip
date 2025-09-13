@@ -62,7 +62,9 @@ public class TaskList {
         if (task == null) {
             throw new IllegalArgumentException("Task cannot be null");
         }
+        int oldSize = tasks.size();
         tasks.add(task);
+        assert tasks.size() == oldSize + 1 : "Task should be added to list";
         autoSave();
     }
 
@@ -72,11 +74,15 @@ public class TaskList {
      * @param tasks The tasks to add
      */
     public void addTasks(Task... tasks) {
+        int oldSize = this.tasks.size();
+        int validTasks = 0;
         for (Task task : tasks) {
             if (task != null) {
                 this.tasks.add(task);
+                validTasks++;
             }
         }
+        assert this.tasks.size() == oldSize + validTasks : "All valid tasks should be added";
         autoSave();
     }
 
@@ -88,10 +94,15 @@ public class TaskList {
      * @throws InvalidTaskNumberException If the index is out of bounds
      */
     public Task deleteTask(int index) throws InvalidTaskNumberException {
+        assert index > 0 : "Task index must be positive: " + index;
+        assert index <= tasks.size() : "Task index out of range: " + index + ", size: " + tasks.size();
         if (index < 1 || index > tasks.size()) {
             throw new InvalidTaskNumberException();
         }
+        int oldSize = tasks.size();
         Task removed = tasks.remove(index - 1);
+        assert tasks.size() == oldSize - 1 : "Task should be removed from list";
+        assert removed != null : "Removed task should not be null";
         autoSave();
         return removed;
     }
@@ -104,11 +115,14 @@ public class TaskList {
      * @throws InvalidTaskNumberException If the index is out of bounds
      */
     public Task markTaskAsDone(int index) throws InvalidTaskNumberException {
+        assert index > 0 : "Task index must be positive: " + index;
+        assert index <= tasks.size() : "Task index out of range: " + index + ", size: " + tasks.size();
         if (index < 1 || index > tasks.size()) {
             throw new InvalidTaskNumberException();
         }
         Task task = tasks.get(index - 1);
         task.markAsDone();
+        assert task.isDone() : "Task should be marked as done";
         autoSave();
         return task;
     }
@@ -121,11 +135,14 @@ public class TaskList {
      * @throws InvalidTaskNumberException If the index is out of bounds
      */
     public Task markTaskAsNotDone(int index) throws InvalidTaskNumberException {
+        assert index > 0 : "Task index must be positive: " + index;
+        assert index <= tasks.size() : "Task index out of range: " + index + ", size: " + tasks.size();
         if (index < 1 || index > tasks.size()) {
             throw new InvalidTaskNumberException();
         }
         Task task = tasks.get(index - 1);
         task.markAsNotDone();
+        assert !task.isDone() : "Task should be marked as not done";
         autoSave();
         return task;
     }
@@ -138,6 +155,9 @@ public class TaskList {
      * @throws InvalidTaskNumberException If the index is out of bounds
      */
     public Task getTask(int index) throws InvalidTaskNumberException {
+        assert !tasks.isEmpty() : "Task list should not be empty when getting task";
+        assert index > 0 : "Task index must be positive: " + index;
+        assert index <= tasks.size() : "Task index out of range: " + index + ", size: " + tasks.size();
         if (index < 1 || index > tasks.size()) {
             throw new InvalidTaskNumberException();
         }
@@ -151,6 +171,7 @@ public class TaskList {
      * @throws IllegalStateException If the task list is empty
      */
     public Task getLastTask() {
+        assert !tasks.isEmpty() : "Task list should not be empty when getting last task";
         if (tasks.isEmpty()) {
             throw new IllegalStateException("Task list is empty");
         }
@@ -193,6 +214,7 @@ public class TaskList {
      * @throws IllegalArgumentException If newTasks is null
      */
     public void setTasks(ArrayList<Task> newTasks) {
+        assert newTasks != null : "New task list cannot be null";
         if (newTasks == null) {
             throw new IllegalArgumentException("Task list cannot be null");
         }
@@ -207,6 +229,8 @@ public class TaskList {
      * @return An ArrayList of tasks that match the search criteria
      */
     public ArrayList<Task> findTasks(String keyword) {
+        assert keyword != null : "Search keyword cannot be null";
+        assert !keyword.trim().isEmpty() : "Search keyword cannot be empty";
         ArrayList<Task> matchingTasks = new ArrayList<>();
         String lowerCaseKeyword = keyword.toLowerCase();
 
