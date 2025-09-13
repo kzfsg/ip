@@ -23,8 +23,8 @@ public class TodoTest {
         String result = todo.toString();
 
         // Step 3: Check if it matches what we expect
-        // A new Todo should show [T][ ] followed by the description
-        String expected = "[T][ ] buy groceries";
+        // A new Todo should show [T][ ] (!) followed by the description (with MEDIUM priority by default)
+        String expected = "[T][ ] (!) buy groceries";
         assertEquals(expected, result);
     }
 
@@ -42,8 +42,8 @@ public class TodoTest {
         // Step 3: Get the string representation
         String result = todo.toString();
 
-        // Step 4: Check if it shows [X] for completed task
-        String expected = "[T][X] buy groceries";
+        // Step 4: Check if it shows [X] for completed task with priority
+        String expected = "[T][X] (!) buy groceries";
         assertEquals(expected, result);
     }
 
@@ -56,7 +56,48 @@ public class TodoTest {
         // Create Todo with empty string
         Todo todo = new Todo("");
         String result = todo.toString();
-        String expected = "[T][ ] ";
+        String expected = "[T][ ] (!) ";
         assertEquals(expected, result);
+    }
+
+    /**
+     * Test Todo with HIGH priority.
+     */
+    @Test
+    public void testToString_highPriority() {
+        Todo todo = new Todo("urgent task", Task.Priority.HIGH);
+        String result = todo.toString();
+        String expected = "[T][ ] (!!) urgent task";
+        assertEquals(expected, result);
+    }
+
+    /**
+     * Test Todo with LOW priority.
+     */
+    @Test
+    public void testToString_lowPriority() {
+        Todo todo = new Todo("low priority task", Task.Priority.LOW);
+        String result = todo.toString();
+        String expected = "[T][ ] () low priority task";
+        assertEquals(expected, result);
+    }
+
+    /**
+     * Test priority getter and setter.
+     */
+    @Test
+    public void testPriority() {
+        Todo todo = new Todo("test task");
+
+        // Default priority should be MEDIUM
+        assertEquals(Task.Priority.MEDIUM, todo.getPriority());
+
+        // Set to HIGH priority
+        todo.setPriority(Task.Priority.HIGH);
+        assertEquals(Task.Priority.HIGH, todo.getPriority());
+
+        // Verify toString reflects the change
+        String expected = "[T][ ] (!!) test task";
+        assertEquals(expected, todo.toString());
     }
 }

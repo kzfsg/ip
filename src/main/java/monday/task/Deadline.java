@@ -26,6 +26,20 @@ public class Deadline extends Task {
     }
 
     /**
+     * Constructs a new Deadline task with the specified description, due date string, and priority.
+     * Parses the due date string into a LocalDateTime object.
+     *
+     * @param description The description of the deadline task
+     * @param dueDateTimeStr The due date/time string in supported formats
+     * @param priority The priority level of the deadline task
+     * @throws DateTimeParseException If the date string cannot be parsed
+     */
+    public Deadline(String description, String dueDateTimeStr, Priority priority) throws DateTimeParseException {
+        super(description, priority);
+        this.dueDateTime = parseDateTimeFromString(dueDateTimeStr);
+    }
+
+    /**
      * Constructs a new Deadline task with the specified description and due date.
      * Used when loading from file where LocalDateTime is already parsed.
      *
@@ -34,6 +48,19 @@ public class Deadline extends Task {
      */
     public Deadline(String description, LocalDateTime dueDateTime) {
         super(description);
+        this.dueDateTime = dueDateTime;
+    }
+
+    /**
+     * Constructs a new Deadline task with the specified description, due date, and priority.
+     * Used when loading from file where LocalDateTime is already parsed.
+     *
+     * @param description The description of the deadline task
+     * @param dueDateTime The due date/time as LocalDateTime object
+     * @param priority The priority level of the deadline task
+     */
+    public Deadline(String description, LocalDateTime dueDateTime, Priority priority) {
+        super(description, priority);
         this.dueDateTime = dueDateTime;
     }
 
@@ -83,6 +110,7 @@ public class Deadline extends Task {
     public String toString() {
         // Display in user-friendly format: MMM dd yyyy h:mma
         DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("MMM dd yyyy h:mma");
-        return "[D]" + getStatusIcon() + " " + description + " (by: " + dueDateTime.format(displayFormatter) + ")";
+        return "[D]" + getStatusIcon() + " " + getPriorityIcon() + " " + description
+                + " (by: " + dueDateTime.format(displayFormatter) + ")";
     }
 }

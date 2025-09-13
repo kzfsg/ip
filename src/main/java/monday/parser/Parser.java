@@ -36,6 +36,7 @@ public class Parser {
         private String description;
         private String parameter;
         private String[] parameters;
+        private Task.Priority priority;
 
         /**
          * Constructs a Command object.
@@ -119,6 +120,67 @@ public class Parser {
         public void setParameters(String[] parameters) {
             this.parameters = parameters;
         }
+
+        /**
+         * Returns the priority for the command.
+         *
+         * @return The priority level
+         */
+        public Task.Priority getPriority() {
+            return priority;
+        }
+
+        /**
+         * Sets the priority for the command.
+         *
+         * @param priority The priority level
+         */
+        public void setPriority(Task.Priority priority) {
+            this.priority = priority;
+        }
+    }
+
+    /**
+     * Parses priority from a command string by looking for /priority flags.
+     *
+     * @param commandPart The command part to parse priority from
+     * @return An array where [0] is the command without priority, [1] is the priority string
+     */
+    private static String[] extractPriority(String commandPart) {
+        String[] parts = commandPart.split(" /priority ", 2);
+        if (parts.length == 2) {
+            return new String[]{parts[0].trim(), parts[1].trim()};
+        }
+        return new String[]{commandPart, null};
+    }
+
+    /**
+     * Converts a priority string to a Priority enum value.
+     *
+     * @param priorityStr The priority string (high, medium, low, 1, 2, 3)
+     * @return The corresponding Priority enum value
+     * @throws InvalidCommandFormatException If the priority string is invalid
+     */
+    private static Task.Priority parsePriority(String priorityStr) throws InvalidCommandFormatException {
+        if (priorityStr == null || priorityStr.trim().isEmpty()) {
+            return Task.Priority.MEDIUM; // Default priority
+        }
+
+        priorityStr = priorityStr.toLowerCase().trim();
+        switch (priorityStr) {
+        case "high":
+        case "1":
+            return Task.Priority.HIGH;
+        case "medium":
+        case "2":
+            return Task.Priority.MEDIUM;
+        case "low":
+        case "3":
+            return Task.Priority.LOW;
+        default:
+            throw new InvalidCommandFormatException(
+                    "Invalid priority: " + priorityStr + ". Valid options: high/1, medium/2, low/3");
+        }
     }
 
     /**
@@ -177,13 +239,16 @@ public class Parser {
      * @param command The command object to configure
      * @param words The command words split from input
      * @throws EmptyDescriptionException If description is empty
+     * @throws InvalidCommandFormatException If priority format is invalid
      */
-    private static void parseTodoCommand(Command command, String[] words) throws EmptyDescriptionException {
+    private static void parseTodoCommand(Command command, String[] words) throws EmptyDescriptionException, InvalidCommandFormatException {
         command.type = CommandType.TODO;
         if (words.length < 2 || words[1].trim().isEmpty()) {
             throw new EmptyDescriptionException("todo");
         }
-        command.setDescription(words[1].trim());
+        String[] priorityParts = extractPriority(words[1]);
+        command.setDescription(priorityParts[0]);
+        command.setPriority(parsePriority(priorityParts[1]));
     }
 
     /**
@@ -199,14 +264,16 @@ public class Parser {
         if (words.length < 2) {
             throw new EmptyDescriptionException("deadline");
         }
-        String[] deadlineParts = words[1].split(" /by ", 2);
+        String[] priorityParts = extractPriority(words[1]);
+        String[] deadlineParts = priorityParts[0].split(" /by ", 2);
         if (deadlineParts.length < 2) {
             throw new InvalidCommandFormatException(
                     "Invalid format for the 'deadline' command. Description and due date are required. " +
-                    "Format: deadline <description> /by <yyyy-MM-dd HHmm>");
+                    "Format: deadline <description> /by <yyyy-MM-dd HHmm> [/priority <high|medium|low>]");
         }
         command.setDescription(deadlineParts[0].trim());
         command.setParameter(deadlineParts[1].trim());
+        command.setPriority(parsePriority(priorityParts[1]));
     }
 
     /**
@@ -222,20 +289,22 @@ public class Parser {
         if (words.length < 2) {
             throw new EmptyDescriptionException("event");
         }
-        String[] eventParts = words[1].split(" /from ", 2);
+        String[] priorityParts = extractPriority(words[1]);
+        String[] eventParts = priorityParts[0].split(" /from ", 2);
         if (eventParts.length < 2) {
             throw new InvalidCommandFormatException(
                     "Invalid format for the 'event' command. Description, start and end times are required. " +
-                    "Format: event <description> /from <start> /to <end>");
+                    "Format: event <description> /from <start> /to <end> [/priority <high|medium|low>]");
         }
         String[] fromToParts = eventParts[1].split(" /to ", 2);
         if (fromToParts.length < 2) {
             throw new InvalidCommandFormatException(
                     "Invalid format for the 'event' command. Description, start and end times are required. " +
-                    "Format: event <description> /from <start> /to <end>");
+                    "Format: event <description> /from <start> /to <end> [/priority <high|medium|low>]");
         }
         command.setDescription(eventParts[0].trim());
         command.setParameters(new String[]{fromToParts[0].trim(), fromToParts[1].trim()});
+        command.setPriority(parsePriority(priorityParts[1]));
     }
 
     /**
@@ -388,7 +457,12 @@ public class Parser {
      * @param ui The Ui instance to display messages
      */
     private static void executeTodo(Command command, TaskList taskList, Ui ui) {
-        taskList.addTask(new Todo(command.getDescription()));
+        Task.Priority priority = command.getPriority();
+        if (priority != null) {
+            taskList.addTask(new Todo(command.getDescription(), priority));
+        } else {
+            taskList.addTask(new Todo(command.getDescription()));
+        }
         ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
     }
 
@@ -402,7 +476,12 @@ public class Parser {
      */
     private static void executeDeadline(Command command, TaskList taskList, Ui ui) throws InvalidDateTimeException {
         try {
-            taskList.addTask(new Deadline(command.getDescription(), command.getParameter()));
+            Task.Priority priority = command.getPriority();
+            if (priority != null) {
+                taskList.addTask(new Deadline(command.getDescription(), command.getParameter(), priority));
+            } else {
+                taskList.addTask(new Deadline(command.getDescription(), command.getParameter()));
+            }
             ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
         } catch (java.time.format.DateTimeParseException e) {
             throw new InvalidDateTimeException(e.getMessage());
@@ -420,7 +499,12 @@ public class Parser {
     private static void executeEvent(Command command, TaskList taskList, Ui ui) throws InvalidDateTimeException {
         try {
             String[] times = command.getParameters();
-            taskList.addTask(new Event(command.getDescription(), times[0], times[1]));
+            Task.Priority priority = command.getPriority();
+            if (priority != null) {
+                taskList.addTask(new Event(command.getDescription(), times[0], times[1], priority));
+            } else {
+                taskList.addTask(new Event(command.getDescription(), times[0], times[1]));
+            }
             ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
         } catch (java.time.format.DateTimeParseException | IllegalArgumentException e) {
             throw new InvalidDateTimeException(e.getMessage());
