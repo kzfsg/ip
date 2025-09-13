@@ -106,33 +106,36 @@ public class Storage {
     /**
      * Formats a task object into the file format string.
      * Uses polymorphism to handle different task types appropriately.
+     * Format includes priority as the last field.
      *
      * @param task The task to format
      * @return The formatted string representation
      */
     private String formatTaskForFile(Task task) {
         String status = task.isDone() ? "1" : "0";
+        String priority = task.getPriority().name();
 
         if (task instanceof Todo) {
-            return "T" + SEPARATOR + status + SEPARATOR + task.getDescription();
+            return "T" + SEPARATOR + status + SEPARATOR + task.getDescription() + SEPARATOR + priority;
         } else if (task instanceof Deadline) {
             Deadline deadline = (Deadline) task;
             String dueDateStr = deadline.getDueDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"));
-            return "D" + SEPARATOR + status + SEPARATOR + task.getDescription() + SEPARATOR + dueDateStr;
+            return "D" + SEPARATOR + status + SEPARATOR + task.getDescription() + SEPARATOR + dueDateStr + SEPARATOR + priority;
         } else if (task instanceof Event) {
             Event event = (Event) task;
             String startTimeStr = event.getStartDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"));
             String endTimeStr = event.getEndDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"));
-            return "E" + SEPARATOR + status + SEPARATOR + task.getDescription() + SEPARATOR + startTimeStr + SEPARATOR + endTimeStr;
+            return "E" + SEPARATOR + status + SEPARATOR + task.getDescription() + SEPARATOR + startTimeStr + SEPARATOR + endTimeStr + SEPARATOR + priority;
         } else {
             // Base Task class - treat as Todo
-            return "T" + SEPARATOR + status + SEPARATOR + task.getDescription();
+            return "T" + SEPARATOR + status + SEPARATOR + task.getDescription() + SEPARATOR + priority;
         }
     }
 
     /**
      * Parses a line from the file back into a Task object.
      * Implements error handling for corrupted data.
+     * Handles both old format (without priority) and new format (with priority).
      *
      * @param line The line to parse
      * @return The parsed Task object, or null if parsing fails
@@ -153,15 +156,17 @@ public class Storage {
 
             switch (taskType) {
                 case "T":
-                    task = new Todo(description);
+                    Task.Priority todoPriority = parseTaskPriority(parts, 3);
+                    task = new Todo(description, todoPriority);
                     break;
                 case "D":
                     if (parts.length >= 4) {
                         String dueDateTimeStr = parts[3].trim();
+                        Task.Priority deadlinePriority = parseTaskPriority(parts, 4);
                         try {
                             // Parse the stored date format back to LocalDateTime
                             LocalDateTime dueDateTime = LocalDateTime.parse(dueDateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"));
-                            task = new Deadline(description, dueDateTime);
+                            task = new Deadline(description, dueDateTime, deadlinePriority);
                         } catch (Exception e) {
                             // Log but don't throw - just skip corrupted entries
                             System.out.println("Skipping corrupted deadline date: " + line);
@@ -176,11 +181,12 @@ public class Storage {
                     if (parts.length >= 5) {
                         String startTimeStr = parts[3].trim();
                         String endTimeStr = parts[4].trim();
+                        Task.Priority eventPriority = parseTaskPriority(parts, 5);
                         try {
                             // Parse the stored date format back to LocalDateTime
                             LocalDateTime startDateTime = LocalDateTime.parse(startTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"));
                             LocalDateTime endDateTime = LocalDateTime.parse(endTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"));
-                            task = new Event(description, startDateTime, endDateTime);
+                            task = new Event(description, startDateTime, endDateTime, eventPriority);
                         } catch (Exception e) {
                             // Log but don't throw - just skip corrupted entries
                             System.out.println("Skipping corrupted event dates: " + line);
@@ -205,6 +211,26 @@ public class Storage {
         } catch (Exception e) {
             System.out.println("Error parsing line '" + line + "': " + e.getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Parses priority from file parts, handling backward compatibility.
+     *
+     * @param parts The split line parts
+     * @param priorityIndex The expected index of the priority field
+     * @return The parsed Priority, or MEDIUM if not found/invalid
+     */
+    private Task.Priority parseTaskPriority(String[] parts, int priorityIndex) {
+        if (parts.length <= priorityIndex) {
+            return Task.Priority.MEDIUM; // Default for old format files
+        }
+
+        try {
+            return Task.Priority.valueOf(parts[priorityIndex].trim());
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid priority value, using MEDIUM as default: " + parts[priorityIndex]);
+            return Task.Priority.MEDIUM;
         }
     }
 }

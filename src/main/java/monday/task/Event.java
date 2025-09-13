@@ -20,9 +20,31 @@ public class Event extends Task {
         }
     }
 
+    // Constructor that accepts strings, parses them to LocalDateTime, and sets priority
+    public Event(String description, String startTimeStr, String endTimeStr, Priority priority) throws DateTimeParseException {
+        super(description, priority);
+        this.startDateTime = parseDateTimeFromString(startTimeStr);
+        this.endDateTime = parseDateTimeFromString(endTimeStr);
+
+        // Validate that start time is before end time
+        if (startDateTime.isAfter(endDateTime)) {
+            throw new IllegalArgumentException("Start time cannot be after end time");
+        }
+    }
+
     // Constructor that accepts LocalDateTime directly (for loading from file)
     public Event(String description, LocalDateTime startDateTime, LocalDateTime endDateTime) {
         super(description);
+        if (startDateTime.isAfter(endDateTime)) {
+            throw new IllegalArgumentException("Start time cannot be after end time");
+        }
+        this.startDateTime = startDateTime;
+        this.endDateTime = endDateTime;
+    }
+
+    // Constructor that accepts LocalDateTime directly with priority (for loading from file)
+    public Event(String description, LocalDateTime startDateTime, LocalDateTime endDateTime, Priority priority) {
+        super(description, priority);
         if (startDateTime.isAfter(endDateTime)) {
             throw new IllegalArgumentException("Start time cannot be after end time");
         }
@@ -79,6 +101,6 @@ public class Event extends Task {
             endStr = endDateTime.format(displayFormatter);
         }
 
-        return "[E]" + getStatusIcon() + " " + description + " (at: " + startStr + " to " + endStr + ")";
+        return "[E]" + getStatusIcon() + " " + getPriorityIcon() + " " + description + " (at: " + startStr + " to " + endStr + ")";
     }
 }
