@@ -122,6 +122,154 @@ public class Parser {
     }
 
     /**
+     * Parses a 'bye' command.
+     *
+     * @param command The command object to configure
+     */
+    private static void parseByeCommand(Command command) {
+        command.type = CommandType.BYE;
+    }
+
+    /**
+     * Parses a 'list' command.
+     *
+     * @param command The command object to configure
+     */
+    private static void parseListCommand(Command command) {
+        command.type = CommandType.LIST;
+    }
+
+    /**
+     * Parses a 'mark' command.
+     *
+     * @param command The command object to configure
+     * @param words The command words split from input
+     * @throws InvalidCommandFormatException If format is invalid
+     */
+    private static void parseMarkCommand(Command command, String[] words) throws InvalidCommandFormatException {
+        command.type = CommandType.MARK;
+        if (words.length < 2) {
+            throw new InvalidCommandFormatException("Invalid format for the 'mark' command. Please specify a task number.");
+        }
+        command.setParameter(words[1].trim());
+    }
+
+    /**
+     * Parses an 'unmark' command.
+     *
+     * @param command The command object to configure
+     * @param words The command words split from input
+     * @throws InvalidCommandFormatException If format is invalid
+     */
+    private static void parseUnmarkCommand(Command command, String[] words) throws InvalidCommandFormatException {
+        command.type = CommandType.UNMARK;
+        if (words.length < 2) {
+            throw new InvalidCommandFormatException("Invalid format for the 'unmark' command. Please specify a task number.");
+        }
+        command.setParameter(words[1].trim());
+    }
+
+    /**
+     * Parses a 'todo' command.
+     *
+     * @param command The command object to configure
+     * @param words The command words split from input
+     * @throws EmptyDescriptionException If description is empty
+     */
+    private static void parseTodoCommand(Command command, String[] words) throws EmptyDescriptionException {
+        command.type = CommandType.TODO;
+        if (words.length < 2 || words[1].trim().isEmpty()) {
+            throw new EmptyDescriptionException("todo");
+        }
+        command.setDescription(words[1].trim());
+    }
+
+    /**
+     * Parses a 'deadline' command.
+     *
+     * @param command The command object to configure
+     * @param words The command words split from input
+     * @throws EmptyDescriptionException If description is empty
+     * @throws InvalidCommandFormatException If format is invalid
+     */
+    private static void parseDeadlineCommand(Command command, String[] words) throws EmptyDescriptionException, InvalidCommandFormatException {
+        command.type = CommandType.DEADLINE;
+        if (words.length < 2) {
+            throw new EmptyDescriptionException("deadline");
+        }
+        String[] deadlineParts = words[1].split(" /by ", 2);
+        if (deadlineParts.length < 2) {
+            throw new InvalidCommandFormatException("Invalid format for the 'deadline' command. Description and due date are required. Format: deadline <description> /by <yyyy-MM-dd HHmm>");
+        }
+        command.setDescription(deadlineParts[0].trim());
+        command.setParameter(deadlineParts[1].trim());
+    }
+
+    /**
+     * Parses an 'event' command.
+     *
+     * @param command The command object to configure
+     * @param words The command words split from input
+     * @throws EmptyDescriptionException If description is empty
+     * @throws InvalidCommandFormatException If format is invalid
+     */
+    private static void parseEventCommand(Command command, String[] words) throws EmptyDescriptionException, InvalidCommandFormatException {
+        command.type = CommandType.EVENT;
+        if (words.length < 2) {
+            throw new EmptyDescriptionException("event");
+        }
+        String[] eventParts = words[1].split(" /from ", 2);
+        if (eventParts.length < 2) {
+            throw new InvalidCommandFormatException("Invalid format for the 'event' command. Description, start and end times are required. Format: event <description> /from <start> /to <end>");
+        }
+        String[] fromToParts = eventParts[1].split(" /to ", 2);
+        if (fromToParts.length < 2) {
+            throw new InvalidCommandFormatException("Invalid format for the 'event' command. Description, start and end times are required. Format: event <description> /from <start> /to <end>");
+        }
+        command.setDescription(eventParts[0].trim());
+        command.setParameters(new String[]{fromToParts[0].trim(), fromToParts[1].trim()});
+    }
+
+    /**
+     * Parses a 'delete' command.
+     *
+     * @param command The command object to configure
+     * @param words The command words split from input
+     * @throws InvalidCommandFormatException If format is invalid
+     */
+    private static void parseDeleteCommand(Command command, String[] words) throws InvalidCommandFormatException {
+        command.type = CommandType.DELETE;
+        if (words.length < 2) {
+            throw new InvalidCommandFormatException("Invalid format for the 'delete' command. Please specify a task number.");
+        }
+        command.setParameter(words[1].trim());
+    }
+
+    /**
+     * Parses a 'find' command.
+     *
+     * @param command The command object to configure
+     * @param words The command words split from input
+     * @throws InvalidCommandFormatException If format is invalid
+     */
+    private static void parseFindCommand(Command command, String[] words) throws InvalidCommandFormatException {
+        command.type = CommandType.FIND;
+        if (words.length < 2 || words[1].trim().isEmpty()) {
+            throw new InvalidCommandFormatException("Invalid format for the 'find' command. Please specify a keyword to search for.");
+        }
+        command.setParameter(words[1].trim());
+    }
+
+    /**
+     * Parses a 'help' command.
+     *
+     * @param command The command object to configure
+     */
+    private static void parseHelpCommand(Command command) {
+        command.type = CommandType.HELP;
+    }
+
+    /**
      * Parses the user input string into a Command object.
      *
      * @param fullCommand The full user input string
@@ -141,92 +289,168 @@ public class Parser {
 
         switch (commandWord) {
             case "bye":
-                command.type = CommandType.BYE;
+                parseByeCommand(command);
                 break;
-
             case "list":
-                command.type = CommandType.LIST;
+                parseListCommand(command);
                 break;
-
             case "mark":
-                command.type = CommandType.MARK;
-                if (words.length < 2) {
-                    throw new InvalidCommandFormatException("Invalid format for the 'mark' command. Please specify a task number.");
-                }
-                command.setParameter(words[1].trim());
+                parseMarkCommand(command, words);
                 break;
-
             case "unmark":
-                command.type = CommandType.UNMARK;
-                if (words.length < 2) {
-                    throw new InvalidCommandFormatException("Invalid format for the 'unmark' command. Please specify a task number.");
-                }
-                command.setParameter(words[1].trim());
+                parseUnmarkCommand(command, words);
                 break;
-
             case "todo":
-                command.type = CommandType.TODO;
-                if (words.length < 2 || words[1].trim().isEmpty()) {
-                    throw new EmptyDescriptionException("todo");
-                }
-                command.setDescription(words[1].trim());
+                parseTodoCommand(command, words);
                 break;
-
             case "deadline":
-                command.type = CommandType.DEADLINE;
-                if (words.length < 2) {
-                    throw new EmptyDescriptionException("deadline");
-                }
-                String[] deadlineParts = words[1].split(" /by ", 2);
-                if (deadlineParts.length < 2) {
-                    throw new InvalidCommandFormatException("Invalid format for the 'deadline' command. Description and due date are required. Format: deadline <description> /by <yyyy-MM-dd HHmm>");
-                }
-                command.setDescription(deadlineParts[0].trim());
-                command.setParameter(deadlineParts[1].trim());
+                parseDeadlineCommand(command, words);
                 break;
-
             case "event":
-                command.type = CommandType.EVENT;
-                if (words.length < 2) {
-                    throw new EmptyDescriptionException("event");
-                }
-                String[] eventParts = words[1].split(" /from ", 2);
-                if (eventParts.length < 2) {
-                    throw new InvalidCommandFormatException("Invalid format for the 'event' command. Description, start and end times are required. Format: event <description> /from <start> /to <end>");
-                }
-                String[] fromToParts = eventParts[1].split(" /to ", 2);
-                if (fromToParts.length < 2) {
-                    throw new InvalidCommandFormatException("Invalid format for the 'event' command. Description, start and end times are required. Format: event <description> /from <start> /to <end>");
-                }
-                command.setDescription(eventParts[0].trim());
-                command.setParameters(new String[]{fromToParts[0].trim(), fromToParts[1].trim()});
+                parseEventCommand(command, words);
                 break;
-
             case "delete":
-                command.type = CommandType.DELETE;
-                if (words.length < 2) {
-                    throw new InvalidCommandFormatException("Invalid format for the 'delete' command. Please specify a task number.");
-                }
-                command.setParameter(words[1].trim());
+                parseDeleteCommand(command, words);
                 break;
-
             case "find":
-                command.type = CommandType.FIND;
-                if (words.length < 2 || words[1].trim().isEmpty()) {
-                    throw new InvalidCommandFormatException("Invalid format for the 'find' command. Please specify a keyword to search for.");
-                }
-                command.setParameter(words[1].trim());
+                parseFindCommand(command, words);
                 break;
-
             case "help":
-                command.type = CommandType.HELP;
+                parseHelpCommand(command);
                 break;
-
             default:
                 throw new UnknownCommandException();
         }
 
         return command;
+    }
+
+    /**
+     * Executes a 'bye' command.
+     */
+    private static void executeBye() {
+        // Handled in main loop
+    }
+
+    /**
+     * Executes a 'list' command.
+     *
+     * @param taskList The TaskList instance to operate on
+     * @param ui The Ui instance to display messages
+     */
+    private static void executeList(TaskList taskList, Ui ui) {
+        ui.showTaskList(taskList);
+    }
+
+    /**
+     * Executes a 'mark' command.
+     *
+     * @param command The command with parameter
+     * @param taskList The TaskList instance to operate on
+     * @param ui The Ui instance to display messages
+     * @throws InvalidTaskNumberException If task number is invalid
+     */
+    private static void executeMark(Command command, TaskList taskList, Ui ui) throws InvalidTaskNumberException {
+        int markTaskNum = Integer.parseInt(command.getParameter());
+        Task markedTask = taskList.markTaskAsDone(markTaskNum);
+        ui.showMarkUnmarkMessage(markedTask, true);
+    }
+
+    /**
+     * Executes an 'unmark' command.
+     *
+     * @param command The command with parameter
+     * @param taskList The TaskList instance to operate on
+     * @param ui The Ui instance to display messages
+     * @throws InvalidTaskNumberException If task number is invalid
+     */
+    private static void executeUnmark(Command command, TaskList taskList, Ui ui) throws InvalidTaskNumberException {
+        int unmarkTaskNum = Integer.parseInt(command.getParameter());
+        Task unmarkedTask = taskList.markTaskAsNotDone(unmarkTaskNum);
+        ui.showMarkUnmarkMessage(unmarkedTask, false);
+    }
+
+    /**
+     * Executes a 'todo' command.
+     *
+     * @param command The command with description
+     * @param taskList The TaskList instance to operate on
+     * @param ui The Ui instance to display messages
+     */
+    private static void executeTodo(Command command, TaskList taskList, Ui ui) {
+        taskList.addTask(new Todo(command.getDescription()));
+        ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
+    }
+
+    /**
+     * Executes a 'deadline' command.
+     *
+     * @param command The command with description and parameter
+     * @param taskList The TaskList instance to operate on
+     * @param ui The Ui instance to display messages
+     * @throws InvalidDateTimeException If date/time format is invalid
+     */
+    private static void executeDeadline(Command command, TaskList taskList, Ui ui) throws InvalidDateTimeException {
+        try {
+            taskList.addTask(new Deadline(command.getDescription(), command.getParameter()));
+            ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new InvalidDateTimeException(e.getMessage());
+        }
+    }
+
+    /**
+     * Executes an 'event' command.
+     *
+     * @param command The command with description and parameters
+     * @param taskList The TaskList instance to operate on
+     * @param ui The Ui instance to display messages
+     * @throws InvalidDateTimeException If date/time format is invalid
+     */
+    private static void executeEvent(Command command, TaskList taskList, Ui ui) throws InvalidDateTimeException {
+        try {
+            String[] times = command.getParameters();
+            taskList.addTask(new Event(command.getDescription(), times[0], times[1]));
+            ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
+        } catch (java.time.format.DateTimeParseException | IllegalArgumentException e) {
+            throw new InvalidDateTimeException(e.getMessage());
+        }
+    }
+
+    /**
+     * Executes a 'delete' command.
+     *
+     * @param command The command with parameter
+     * @param taskList The TaskList instance to operate on
+     * @param ui The Ui instance to display messages
+     * @throws InvalidTaskNumberException If task number is invalid
+     */
+    private static void executeDelete(Command command, TaskList taskList, Ui ui) throws InvalidTaskNumberException {
+        int deleteTaskNum = Integer.parseInt(command.getParameter());
+        Task deletedTask = taskList.deleteTask(deleteTaskNum);
+        ui.showTaskDeletedMessage(deletedTask, taskList.size());
+    }
+
+    /**
+     * Executes a 'find' command.
+     *
+     * @param command The command with parameter
+     * @param taskList The TaskList instance to operate on
+     * @param ui The Ui instance to display messages
+     */
+    private static void executeFind(Command command, TaskList taskList, Ui ui) {
+        String keyword = command.getParameter();
+        ArrayList<Task> matchingTasks = taskList.findTasks(keyword);
+        ui.showMatchingTasks(matchingTasks);
+    }
+
+    /**
+     * Executes a 'help' command.
+     *
+     * @param ui The Ui instance to display messages
+     */
+    private static void executeHelp(Ui ui) {
+        ui.showHelp();
     }
 
     /**
@@ -246,65 +470,35 @@ public class Parser {
 
         switch (command.getType()) {
             case BYE:
-                // Handled in main loop
+                executeBye();
                 break;
-
             case LIST:
-                ui.showTaskList(taskList);
+                executeList(taskList, ui);
                 break;
-
             case MARK:
-                int markTaskNum = Integer.parseInt(command.getParameter());
-                Task markedTask = taskList.markTaskAsDone(markTaskNum);
-                ui.showMarkUnmarkMessage(markedTask, true);
+                executeMark(command, taskList, ui);
                 break;
-
             case UNMARK:
-                int unmarkTaskNum = Integer.parseInt(command.getParameter());
-                Task unmarkedTask = taskList.markTaskAsNotDone(unmarkTaskNum);
-                ui.showMarkUnmarkMessage(unmarkedTask, false);
+                executeUnmark(command, taskList, ui);
                 break;
-
             case TODO:
-                taskList.addTask(new Todo(command.getDescription()));
-                ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
+                executeTodo(command, taskList, ui);
                 break;
-
             case DEADLINE:
-                try {
-                    taskList.addTask(new Deadline(command.getDescription(), command.getParameter()));
-                    ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
-                } catch (java.time.format.DateTimeParseException e) {
-                    throw new InvalidDateTimeException(e.getMessage());
-                }
+                executeDeadline(command, taskList, ui);
                 break;
-
             case EVENT:
-                try {
-                    String[] times = command.getParameters();
-                    taskList.addTask(new Event(command.getDescription(), times[0], times[1]));
-                    ui.showTaskAddedMessage(taskList.getLastTask(), taskList.size());
-                } catch (java.time.format.DateTimeParseException | IllegalArgumentException e) {
-                    throw new InvalidDateTimeException(e.getMessage());
-                }
+                executeEvent(command, taskList, ui);
                 break;
-
             case DELETE:
-                int deleteTaskNum = Integer.parseInt(command.getParameter());
-                Task deletedTask = taskList.deleteTask(deleteTaskNum);
-                ui.showTaskDeletedMessage(deletedTask, taskList.size());
+                executeDelete(command, taskList, ui);
                 break;
-
             case FIND:
-                String keyword = command.getParameter();
-                ArrayList<Task> matchingTasks = taskList.findTasks(keyword);
-                ui.showMatchingTasks(matchingTasks);
+                executeFind(command, taskList, ui);
                 break;
-
             case HELP:
-                ui.showHelp();
+                executeHelp(ui);
                 break;
-
             case UNKNOWN:
             default:
                 throw new UnknownCommandException();
