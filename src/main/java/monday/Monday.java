@@ -73,7 +73,29 @@ public class Monday {
      * Generates a response for the user's chat message.
      */
     public String getResponse(String input) {
-        return "Monday heard: " + input;
+        try {
+            Parser.Command command = Parser.parse(input);
+
+            if (command.getType() == CommandType.BYE) {
+                return "Bye. Hope to see you again soon!";
+            }
+
+            // Capture output from existing UI by redirecting System.out
+            java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
+            java.io.PrintStream originalOut = System.out;
+            System.setOut(new java.io.PrintStream(outputStream));
+
+            try {
+                Parser.execute(command, tasks, ui);
+                return outputStream.toString().trim();
+            } finally {
+                System.setOut(originalOut);
+            }
+
+        } catch (EmptyDescriptionException | InvalidCommandFormatException
+                 | UnknownCommandException | InvalidTaskNumberException | InvalidDateTimeException e) {
+            return e.getMessage();
+        }
     }
 
     /**
