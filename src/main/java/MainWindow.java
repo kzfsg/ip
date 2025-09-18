@@ -33,6 +33,18 @@ public class MainWindow extends AnchorPane {
     /** Injects the Monday instance */
     public void setMonday(Monday m) {
         monday = m;
+        showWelcomeMessage();
+    }
+
+    /**
+     * Displays a welcome message when the application starts
+     */
+    private void showWelcomeMessage() {
+        String greeting = "Hello! I'm Monday, your task management assistant.\n"
+                + "What can I help you with today?";
+        dialogContainer.getChildren().add(
+                DialogBox.getDukeDialog(greeting, mondayImage)
+        );
     }
 
     /**
